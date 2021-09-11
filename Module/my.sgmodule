@@ -1,5 +1,5 @@
 #!name=_my.sgmodule
-#!desc=优化 iOS 端 Surge 使用体验
+#!desc=优化 Surge 使用体验
 #!system=ios
 
 [General]
