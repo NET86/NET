@@ -1,0 +1,6 @@
+#!name=add
+#!desc=优化iOS端的使用体验
+#!system=ios
+
+[General]
+dns-server = 119.29.29.29, 223.5.5.5, 114.114.114.114, system #公共DNS
