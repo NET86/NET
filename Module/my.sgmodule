@@ -1,7 +1,13 @@
-#!name=my.sgmodule
+#!name=_my.sgmodule
 #!desc=优化iOS端Surge使用体验
 #!system=ios
 
 [General]
 #DNS使用腾讯、阿里、南京信风、系统四选一
 dns-server = 119.29.29.29, 223.5.5.5, 114.114.114.114, system
+
+[Script]
+http-response ^https?:\/\/account\.wps\.cn\/api\/users requires-body=1,max-size=-1,script-path=https://raw.githubusercontent.com/NobyDa/Script/master/Surge/JS/Wps.js
+
+[MITM]
+hostname = %APPEND% account.wps.cn
