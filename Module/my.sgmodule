@@ -1,7 +1,7 @@
 #!name=add
-#!desc=优化iOS端的使用体验
+#!desc=优化iOS端surge使用体验
 #!system=ios
 
 [General]
-#DNS
+#DNS使用腾讯、阿里、南京信风、系统四选一
 dns-server = 119.29.29.29, 223.5.5.5, 114.114.114.114, system
