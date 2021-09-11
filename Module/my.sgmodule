@@ -1,6 +1,6 @@
-#!name= _my.sgmodule
-#!desc= 优化 iOS 端 Surge 使用体验
-#!system= iOS
+#!name = _my.sgmodule
+#!desc = 优化 iOS 端 Surge 使用体验
+#!system = ios
 
 [General]
 # DNS 使用腾讯、阿里、南京信风、系统四选一
