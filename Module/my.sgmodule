@@ -1,6 +1,6 @@
 #!name= _my.sgmodule
 #!desc= 优化 iOS 端 Surge 使用体验
-#!system= ios
+#!system= iOS
 
 [General]
 # DNS 使用腾讯、阿里、南京信风、系统四选一
@@ -9,13 +9,11 @@ dns-server = 119.29.29.29, 223.5.5.5, 114.114.114.114, system
 geoip-maxmind-url = https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/Country.mmdb
 
 [URL Rewrite]
-# 302重定向
+# 302 重定向
 ^https?:\/\/(www.)?(g|google)\.cn https://www.google.com 302
-^https?:\/\/(ditu|maps).google\.cn https://maps.google.com 302
-^https?:\/\/(www.)?taobao\.com\/ https://taobao.com/ 302
-^https?:\/\/(www.)?jd\.com\/ https://www.jd.com/ 302
 
 [Script]
+# 解锁 WPS 部分功能
 http-response ^https?:\/\/account\.wps\.cn\/api\/users requires-body=1,max-size=-1,script-path=https://raw.githubusercontent.com/NobyDa/Script/master/Surge/JS/Wps.js
 
 [MITM]
