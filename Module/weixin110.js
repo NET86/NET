@@ -11,7 +11,7 @@ if (str.indexOf("m.tb.cn") != -1) {
     $.notify(``, "", "🛍️点击打开淘宝1", opener)
 } else if (str.indexOf("如需浏览")) {
     $.notify(``,"", "🔗点击打开链接2", "https://"+str)
-}else if (str.indexOf("已停止")) {
+}else {
     $.notify(``,"", "🔗点击打开链接3", "https://"+str)
 }
 
