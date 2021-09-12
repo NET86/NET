@@ -1,22 +1,3 @@
-/*
- 在微信中打开淘宝等被屏蔽链接，点击 Surge/QuantumultX 通知跳转到 Safari 或淘宝 App
-  by @HotKids & @XIAO_KOP,修改自 @江湖中人
-
-/*********************
-QuantumultX 远程脚本配置:
-**********************
-[rewrite_local]
-^https?:\/\/weixin110\.qq\.com\/cgi-bin\/mmspamsupport-bin\/newredirectconfirmcgi url script-response-body https://raw.githubusercontent.com/HotKids/Rules/master/Script/weixin110.js
-[mitm] 
-hostname= weixin110.qq.com
-**********************
-Surge 4.2.0+ 脚本配置:
-**********************
-[Script]
-tbopener.js = type=http-response,pattern=^https?:\/\/weixin110\.qq\.com\/cgi-bin\/mmspamsupport-bin\/newredirectconfirmcgi,script-path=https://raw.githubusercontent.com/HotKids/Rules/master/Script/weixin110.js
-[MITM] 
-hostname= weixin110.qq.com
-*/
 
 var str = ($response.body);
 
