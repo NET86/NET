@@ -8,6 +8,11 @@ dns-server = 119.29.29.29, 223.5.5.5, 114.114.114.114, system
 # > 自定义 GeoIP 数据库
 geoip-maxmind-url = https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/Country.mmdb
 
+[Rule]
+# > 隐私及广告等规则
+DOMAIN,sessions.bugsnag.com,REJECT-DROP
+DOMAIN,data.flurry.com,REJECT-DROP
+
 [URL Rewrite]
 # > 302 重定向
 ^https?:\/\/(www.)?(g|google)\.cn https://www.google.com 302
