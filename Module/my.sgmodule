@@ -4,7 +4,7 @@
 
 [General]
 # > DNS 从腾讯、阿里、南京信风、系统 四选一
-dns-server = 119.29.29.29, 223.5.5.5, 114.114.114.114, system
+dns-server = 223.5.5.5, 119.29.29.29, system
 # > 自定义 GeoIP 数据库
 geoip-maxmind-url = https://raw.githubusercontent.com/Hackl0us/GeoIP2-CN/release/Country.mmdb
 
