@@ -1,0 +1,9 @@
+#!name=_my.sgmodule
+#!desc=优化 Surge 使用体验
+
+[Script]
+# > 解锁 WPS 部分功能
+http-response ^https?:\/\/account\.wps\.cn\/api\/users requires-body=1,max-size=-1,script-path=https://raw.githubusercontent.com/NobyDa/Script/master/Surge/JS/Wps.js
+# > 解锁扫描全能王部分功能
+http-response https:\/\/(api|api-cs)\.intsig\.net\/purchase\/cs\/query_property\? requires-body=1,max-size=0,script-path=https://raw.githubusercontent.com/NobyDa/Script/master/Surge/JS/CamScanner.js, tag=扫描全能王
+
