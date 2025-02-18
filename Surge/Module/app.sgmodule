@@ -1,5 +1,5 @@
-#!name=_my.sgmodule
-#!desc=优化 Surge 使用体验
+#!name=app.sgmodule
+#!desc=优化 App 使用体验
 
 [Script]
 # > 解锁 WPS 部分功能
