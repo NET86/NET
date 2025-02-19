@@ -1,4 +1,4 @@
-#!name=app.sgmodule
+#!name=AppPlus.sgmodule
 #!desc=优化 App 使用体验
 
 [Script]
