@@ -4,6 +4,7 @@
 # > 需先将 Safari 搜索引擎设置为必应
 # > Surge 开启时：Safari 搜索跳转至 Google
 # > Surge 关闭时：正常使用必应搜索
+# > 参考：https://raw.githubusercontent.com/micturkey/surgemodule/main/baidu2google/iOSBaidu2Google.sgmodule
 # > 更新日期：2025-02-19
 
 [URL Rewrite]
