@@ -1,0 +1,13 @@
+#!name=Bing2Google
+#!desc=Bing 重定向至 Google
+
+# 需先将 Safari 搜索引擎设置为必应
+# Surge 开启时：Safari 搜索跳转至 Google
+# Surge 关闭时：正常使用必应搜索
+# 更新日期：2025-02-19
+
+[URL Rewrite]
+^https:\/\/www\.bing\.com\/search\?.*?q=(.*?)&form=APIPH.*$ https://www.google.com/search?q=$1 302
+
+[MITM]
+hostname = %APPEND% www.bing.com
