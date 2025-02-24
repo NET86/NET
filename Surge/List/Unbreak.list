@@ -1,0 +1,4 @@
+# 自用，补充https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/Direct/Direct.list
+
+# Google Analytics
+DOMAIN,analytics.google.com
