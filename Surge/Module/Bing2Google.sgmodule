@@ -1,14 +1,9 @@
-#!name=Bing2Google
-#!desc=Bing 搜索重定向至 Google
-
-# > 需先将 Safari 搜索引擎设置为必应
-# > Surge 开启时：Safari 搜索跳转至 Google
-# > Surge 关闭时：正常使用必应搜索
-# > 参考：https://raw.githubusercontent.com/micturkey/surgemodule/main/baidu2google/iOSBaidu2Google.sgmodule
-# > 更新日期：2025-02-19
+#!name=iOSBing2Google
+#!desc=将 iOS Safari 的 Bing 默认搜索重定向至 Google，不影响普通 Bing 搜索
+#!category=Search2Google
 
 [URL Rewrite]
-^https:\/\/www\.bing\.com\/search\?.*?q=(.*?)&form=APIPH.*$ https://www.google.com/search?q=$1 302
+^https:\/\/www\.bing\.com\/search\?q=([^&]+)&form=APIPH1&PC=APPL(?:&.*)?$ https://www.google.com/search?q=$1 302
 
 [MITM]
 hostname = %APPEND% www.bing.com
