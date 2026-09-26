@@ -179,6 +179,7 @@ proxy-groups:
     hidden: true
   - name: AI
     type: select
+    default-selected: 节点选择
     proxies: [DIRECT, 节点选择, 香港, 美国, 日本, 韩国, 台湾, 新加坡, 其他地区, 机场 A, 机场 B, 全部节点]
   - {name: Google, <<: *service}
   - name: Microsoft
