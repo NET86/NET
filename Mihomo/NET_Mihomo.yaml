@@ -1,7 +1,7 @@
-# NET_Mihomo · v0.2 · 2026-09-25
+# NET_Mihomo · v0.2 · 2026-10-01
 # 原生 Mihomo 双机场模板。仅填写两个订阅 URL，机场只提供节点。
 # 不含真实机场名称、订阅凭据或私人兼容规则；填写后的副本请勿公开。
-# 需要支持 MRS / PASS / empty-fallback 的 Mihomo。使用前阅读 README.md。
+# 需要支持 PASS / empty-fallback 的 Mihomo。使用前阅读 README.md。
 
 # 共用参数：YAML 锚点在加载时展开，不需要 JavaScript 覆写。
 x-provider: &provider
@@ -31,14 +31,21 @@ x-auto: &auto
 x-domain: &domain
   type: http
   behavior: domain
-  format: mrs
+  format: yaml
+  interval: 86400
+  proxy: 资源下载
+
+x-classical: &classical
+  type: http
+  behavior: classical
+  format: yaml
   interval: 86400
   proxy: 资源下载
 
 x-ip: &ip
   type: http
   behavior: ipcidr
-  format: mrs
+  format: yaml
   interval: 86400
   proxy: 资源下载
 
@@ -194,8 +201,8 @@ proxy-groups:
     proxies: [DIRECT, 节点选择, 香港, 台湾, 日本, 新加坡, 美国, 韩国, 其他地区, 机场 A, 机场 B, 全部节点]
   - {name: Twitter, <<: *service}
   - {name: Telegram, <<: *service}
-  # PASS 表示继续匹配规则，并非直接出站；默认不拦截广告。
-  - {name: 广告过滤, type: select, proxies: [PASS, REJECT]}
+  # 广告默认拦截；PASS 可关闭拦截并继续匹配规则。
+  - {name: 广告过滤, type: select, default-selected: REJECT, proxies: [PASS, REJECT]}
   - {name: 机场 A, type: select, use: [AirportA], empty-fallback: REJECT}
   - {name: 机场 B, type: select, use: [AirportB], empty-fallback: REJECT}
   - {name: 全部节点, type: select, use: [AirportA, AirportB], empty-fallback: REJECT}
@@ -240,6 +247,10 @@ rule-providers:
     proxy: 资源下载
     path: ./rules/upload-cn.list
     url: https://raw.githubusercontent.com/NET86/NET/main/List/UploadCN.list
+  Private:
+    <<: *classical
+    path: ./rules/private.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Lan/Lan.yaml
   AI-Daily:
     type: http
     behavior: classical
@@ -248,77 +259,78 @@ rule-providers:
     proxy: 资源下载
     path: ./rules/ai-daily.yaml
     url: https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml
-  # ai-daily 当前不包含 Copilot；补充 GitHub 集合和下方 Microsoft 精确域名。
-  AI-Copilot:
-    <<: *domain
-    path: ./rules/github-copilot.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github-copilot.mrs
-  Private:
-    <<: *domain
-    path: ./rules/private.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/private.mrs
+  Direct:
+    <<: *classical
+    path: ./rules/direct.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Direct/Direct.yaml
   Ads:
     <<: *domain
-    path: ./rules/ads.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/category-ads-all.mrs
+    path: ./rules/ads.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising_Domain.yaml
+  Ads-Extra:
+    <<: *classical
+    path: ./rules/ads-extra.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising.yaml
   Apple:
-    <<: *domain
-    path: ./rules/apple.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/apple.mrs
-  Google:
-    <<: *domain
-    path: ./rules/google.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/google.mrs
+    <<: *classical
+    path: ./rules/apple.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Apple/Apple_Classical.yaml
   YouTube:
-    <<: *domain
-    path: ./rules/youtube.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/youtube.mrs
+    <<: *classical
+    path: ./rules/youtube.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/YouTube/YouTube.yaml
+  Google:
+    <<: *classical
+    path: ./rules/google.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Google/Google.yaml
   GitHub:
-    <<: *domain
-    path: ./rules/github.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/github.mrs
+    <<: *classical
+    path: ./rules/github.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/GitHub/GitHub.yaml
   Microsoft:
-    <<: *domain
-    path: ./rules/microsoft.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/microsoft.mrs
+    <<: *classical
+    path: ./rules/microsoft.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Microsoft/Microsoft.yaml
   Twitter:
-    <<: *domain
-    path: ./rules/twitter.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/twitter.mrs
+    <<: *classical
+    path: ./rules/twitter.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Twitter/Twitter.yaml
   Telegram:
-    <<: *domain
-    path: ./rules/telegram.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/telegram.mrs
-  Telegram-IP:
-    <<: *ip
-    path: ./rules/telegram-ip.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/telegram.mrs
+    <<: *classical
+    path: ./rules/telegram.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.yaml
   SteamCN:
-    <<: *domain
-    path: ./rules/steam-cn.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/steam@cn.mrs
+    <<: *classical
+    path: ./rules/steamcn.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/SteamCN/SteamCN.yaml
   BiliIntl:
-    <<: *domain
-    path: ./rules/biliintl.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/biliintl.mrs
+    <<: *classical
+    path: ./rules/biliintl.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/BiliBiliIntl/BiliBiliIntl.yaml
   Global:
     <<: *domain
-    path: ./rules/global.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/geolocation-!cn.mrs
+    path: ./rules/global.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Global/Global_Domain.yaml
+  Global-Extra:
+    <<: *classical
+    path: ./rules/global-extra.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Global/Global.yaml
   China:
     <<: *domain
-    path: ./rules/china.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geosite/cn.mrs
+    path: ./rules/china.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaMax/ChinaMax_Domain.yaml
+  China-Extra:
+    <<: *classical
+    path: ./rules/china-extra.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaMax/ChinaMax.yaml
   China-IP:
     <<: *ip
-    path: ./rules/china-ip.mrs
-    url: https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/meta/geo/geoip/cn.mrs
+    path: ./rules/china-ip.yaml
+    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaMax/ChinaMax_IP.yaml
 
 # 6. 从上至下首次命中。具体服务在通用海外/国内集合之前。
 rules:
-  # 上传直连优先于 Ads 和通用海外集合。
   - RULE-SET,UploadCN,DIRECT
-  # 私人例外可加在这里；先核查影响范围，不要写共享 CDN 的整站归类。
   - DOMAIN-REGEX,^[^.]+$,DIRECT
   - DOMAIN,localhost,DIRECT
   - DOMAIN-SUFFIX,local,DIRECT
@@ -339,19 +351,25 @@ rules:
   - IP-CIDR6,ff00::/8,DIRECT,no-resolve
   - RULE-SET,Private,DIRECT
   - RULE-SET,AI-Daily,AI
-  - RULE-SET,AI-Copilot,AI
+  - DOMAIN,copilot-proxy.githubusercontent.com,AI
+  - DOMAIN,copilot-workspace.githubnext.com,AI
+  - DOMAIN,copilotprodattachments.blob.core.windows.net,AI
+  - DOMAIN-SUFFIX,githubcopilot.com,AI
+  - DOMAIN,copilot-telemetry-service.githubusercontent.com,AI
+  - DOMAIN,copilot-telemetry.githubusercontent.com,AI
   - DOMAIN-SUFFIX,copilot.microsoft.com,AI
   - DOMAIN-SUFFIX,copilot.cloud.microsoft,AI
   - DOMAIN-SUFFIX,copilot.com,AI
   - DOMAIN-SUFFIX,copilot-stg.com,AI
-  - RULE-SET,Ads,广告过滤
-  # 限定的 Windows 更新/网络检测直连，避免所有 Microsoft 流量被强制直连。
+  - RULE-SET,Direct,DIRECT
   - DOMAIN-SUFFIX,dl.delivery.mp.microsoft.com,DIRECT
   - DOMAIN-SUFFIX,update.microsoft.com,DIRECT
   - DOMAIN-SUFFIX,windowsupdate.com,DIRECT
   - DOMAIN-SUFFIX,windowsupdate.microsoft.com,DIRECT
   - DOMAIN,www.msftconnecttest.com,DIRECT
   - DOMAIN,dns.msftncsi.com,DIRECT
+  - RULE-SET,Ads,广告过滤
+  - RULE-SET,Ads-Extra,广告过滤
   - DOMAIN-SUFFIX,appstore.com,Apple
   - RULE-SET,Apple,Apple
   - RULE-SET,YouTube,Google
@@ -360,10 +378,12 @@ rules:
   - RULE-SET,Microsoft,Microsoft
   - RULE-SET,Twitter,Twitter
   - RULE-SET,Telegram,Telegram
-  - RULE-SET,Telegram-IP,Telegram,no-resolve
   - RULE-SET,SteamCN,DIRECT
   - RULE-SET,BiliIntl,节点选择
   - RULE-SET,Global,节点选择
+  - RULE-SET,Global-Extra,节点选择
   - RULE-SET,China,DIRECT
+  - RULE-SET,China-Extra,DIRECT
   - RULE-SET,China-IP,DIRECT
+  - GEOIP,CN,DIRECT
   - MATCH,节点选择

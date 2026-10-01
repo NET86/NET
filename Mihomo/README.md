@@ -11,9 +11,9 @@
 
 ## 分流
 
-服务组保留 Apple、AI、Google、Microsoft、Twitter、Telegram。AI 首次使用默认跟随 `节点选择`；GitHub 规则进入 Microsoft；未命中规则的流量进入 `节点选择`。`广告过滤` 默认 PASS，选择 REJECT 后拦截匹配的广告规则。
+服务组保留 Apple、AI、Google、Microsoft、Twitter、Telegram。AI 首次使用默认跟随 `节点选择`；GitHub 规则进入 Microsoft；未命中规则的流量进入 `节点选择`。`广告过滤` 首次使用默认 REJECT；选择 PASS 后继续匹配后续规则。客户端保存的手动选择优先于模板默认值。
 
-AI 规则使用 [NET86/rules 的 ai-daily](https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml)。其他规则集由配置中的 rule-provider URL 获取；规则源及节点服务的可用性由上游提供方决定。
+AI 规则使用 [NET86/rules 的 ai-daily](https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml)。通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 的官方 Clash 适配格式。两端分类、顺序、策略和格式映射见[公共分流说明](../RULES.md)。规则源及节点服务的可用性由上游提供方决定。
 
 ## 验证
 
