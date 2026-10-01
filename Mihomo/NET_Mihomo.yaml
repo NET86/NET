@@ -137,6 +137,10 @@ dns:
     - 'https://1.1.1.1/dns-query#节点选择'
     - 'https://8.8.8.8/dns-query#节点选择'
   nameserver-policy:
+    # 国内上传域名使用国内 DNS。
+    'rule-set:UploadCN':
+      - 'https://dns.alidns.com/dns-query#DIRECT'
+      - 'https://doh.pub/dns-query#DIRECT'
     # 内网 DNS 依赖当前网络；若系统 DNS 指向本核心，请改填真实内网 DNS，避免回环。
     'rule-set:Private': system
     '*': system
@@ -228,6 +232,14 @@ proxy-groups:
 
 # 5. 规则来源：主规则由我们维护，机场订阅无权替换。
 rule-providers:
+  UploadCN:
+    type: http
+    behavior: classical
+    format: text
+    interval: 86400
+    proxy: 资源下载
+    path: ./rules/upload-cn.list
+    url: https://raw.githubusercontent.com/NET86/NET/main/List/UploadCN.list
   AI-Daily:
     type: http
     behavior: classical
@@ -304,6 +316,8 @@ rule-providers:
 
 # 6. 从上至下首次命中。具体服务在通用海外/国内集合之前。
 rules:
+  # 上传直连优先于 Ads 和通用海外集合。
+  - RULE-SET,UploadCN,DIRECT
   # 私人例外可加在这里；先核查影响范围，不要写共享 CDN 的整站归类。
   - DOMAIN-REGEX,^[^.]+$,DIRECT
   - DOMAIN,localhost,DIRECT

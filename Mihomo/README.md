@@ -18,3 +18,14 @@ AI 规则使用 [NET86/rules 的 ai-daily](https://raw.githubusercontent.com/NET
 ## 验证
 
 填写有效订阅后，用 Mihomo `-t` 检查配置，并以 FlClash 实际运行配置和连接测试验收。模板中的占位订阅不能直接使用。
+
+## 国内上传直连
+
+公共规则文件为 [`List/UploadCN.list`](../List/UploadCN.list)，Surge 与 Mihomo 共用。
+Mihomo 使用 `classical/text` 格式，通过 `资源下载` 更新，缓存位于 `./rules/upload-cn.list`，更新周期为 24 小时。
+
+上传规则优先于广告及通用分流；相同规则集用于 `nameserver-policy`，通过 AliDNS / DNSPod 的 DIRECT DoH 解析。
+在 FlClash 中关闭 DNS 覆写，或在覆写设置中保留相同策略；以实际生成配置为准。
+
+清单使用精确域名匹配，只维护国内上传服务；新增条目需确认用途，不加入整站后缀或境外服务。
+仓库仅保存公共规则和无凭证模板；填写真实订阅后的私人配置不应公开。
