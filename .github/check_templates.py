@@ -121,7 +121,11 @@ def cache_rules(home):
         if name in ["AI-Daily", "Microsoft-Copilot", "GitHub-Copilot"]:
             surge_url = provider["url"].replace("/mihomo/", "/surge/").replace(".yaml", ".list")
             payload = yaml.safe_load(content)["payload"]
-            assert payload and payload == lines(fetch(surge_url).decode()), name
+            surge_payload = lines(fetch(surge_url).decode())
+            assert payload and surge_payload, name
+            # ai-daily intentionally adapts regex to Surge wildcard; Copilot is domain-only.
+            if name != "AI-Daily":
+                assert payload == surge_payload, name
             for host in ["microsoft.com", "github.com", "raw.githubusercontent.com"]:
                 for rule in payload:
                     kind, value = rule.split(",", 1)
@@ -171,7 +175,9 @@ def native_check(binary, home, fixtures):
                 try:
                     proxies = api("/proxies")["proxies"]
                     providers = api("/providers/proxies")["providers"]
-                    if all(len(providers[key]["proxies"]) == len(names) for key, names in expected_names.items()):
+                    rule_providers = api("/providers/rules")["providers"]
+                    if (all(len(providers[key]["proxies"]) == len(names) for key, names in expected_names.items())
+                            and all(rule_providers[name]["ruleCount"] > 0 for name in CONFIG["rule-providers"])):
                         break
                 except (OSError, KeyError):
                     pass
