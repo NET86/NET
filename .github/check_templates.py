@@ -24,8 +24,16 @@ CASES = {
     "新加坡": ["SG-01", "sg-01", "新加坡", "狮城", "獅城", "🇸🇬", "Singapore"],
     "美国": ["US-01", "us-01", "_US_", "USA-01", "usa-01", "美国", "美國", "🇺🇸", "United States", "States"],
     "韩国": ["KR-01", "kr-01", "韩国", "韓國", "🇰🇷", "Korea"],
-    "其他地区": ["AUS-Sydney", "aus-sydney", "RUS-01", "DE-01", "CUS-01", "US01", "XHK-01", "XJP-01", "XSG-01", "XTW-01", "XKR-01", "Thailand", "Thai-Bangkok", "Chongqing", "chongqing-01", "XHong", "HongX", "XHongKong", "HongKongX", "XTai", "TaiX", "XTaiwan", "TaiwanX", "XTaipei", "TaipeiX"],
+    "其他地区": ["AUS-Sydney", "aus-sydney", "RUS-01", "DE-01", "CUS-01", "US01", "XHK-01", "XJP-01", "XSG-01", "XTW-01", "XKR-01", "Thailand", "Thai-Bangkok", "Chongqing", "chongqing-01", "XHong", "HongX", "XHongKong", "HongKongX", "XTai", "TaiX", "XTaiwan", "TaiwanX", "XTaipei", "TaipeiX", "GB-01", "GB-London-01", "London-GB-02"],
 }
+SURGE_OTHER_NAMES = ["Traffic-Node-01", "Expire-Node-01", "官网线路-01", "套餐专线-01", "更新线路-01"]
+# Only explicit status/traffic formats are metadata; tokens inside node names are not.
+STATUS_NAMES = [
+    "剩余流量：10 GB", "流量: 100GB", "套餐到期：2026-12-31", "距离下次重置: 3天",
+    "到期时间: 2026-12-31", "Remaining Traffic: 100 GB", "Traffic: 100 GB",
+    "Expire: 2026-12-31", "Reset: 3 days", "100 GB", "12.5GB",
+    "导航: https://example.com", "官网: https://example.com", "更新: 请更新订阅", "套餐: 示例",
+]
 
 
 def lines(text):
@@ -66,10 +74,25 @@ def static_checks():
                 assert bool(re.search(pattern, name)) == (expected == region), (region, name)
     other_filters = re.findall(r"^.*其他·.*policy-regex-filter=(.*)$", surge_groups, re.M)
     assert len(other_filters) == 3
-    for region, names in CASES.items():
+    all_filters = re.findall(r"^🌐 全部节点 = .*policy-regex-filter=(.*)$", surge_groups, re.M)
+    assert len(all_filters) == 1
+    filter_failures = []
+    for region, names in [*CASES.items(), ("其他地区", SURGE_OTHER_NAMES)]:
         for name in names:
             assert bool(re.search(CONFIG["x-known-regions"], name)) == (region != "其他地区"), name
-            assert all(bool(re.search(p, name)) == (region == "其他地区") for p in other_filters), name
+            for prefix in ["", "机场 A-", "机场 B-"]:
+                for group, patterns, expected in [
+                    ("其他地区", other_filters, region == "其他地区"), ("全部节点", all_filters, True)
+                ]:
+                    if not all(bool(re.search(p, prefix + name)) == expected for p in patterns):
+                        filter_failures.append((group, prefix + name, expected))
+    for name in STATUS_NAMES:
+        for prefix in ["", "机场 A-", "机场 B-"]:
+            for group, patterns in [("其他地区", other_filters), ("全部节点", all_filters)]:
+                if any(re.search(p, prefix + name) for p in patterns):
+                    filter_failures.append((group, prefix + name, False))
+    assert not filter_failures, filter_failures
+    print("Surge other/all filters: fixed node and status tables with both airport prefixes passed")
     surge_rules = lines(SURGE.split("[Rule]", 1)[1].split("[MITM]", 1)[0])
     rules = CONFIG["rules"]
     assert rules[0] == "RULE-SET,UploadCN,DIRECT"

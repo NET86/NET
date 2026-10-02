@@ -48,4 +48,8 @@ Mihomo 的上传清单同时用于国内 DNS 策略，通过 AliDNS / DNSPod DIR
 
 两端地区过滤统一忽略大小写，国家代码及 Hong、Hong Kong、HongKong、Tai、Taiwan、Taipei 别名以字母数字边界识别；`US-01` 归美国，`AUS-Sydney`、`Thailand`、`Thai-Bangkok`、`Chongqing` 归其他地区。保留中文、旗帜和 States 等既有别名。名称同时含多个地区仍需人工调整。
 
+Surge 的其他地区及全部节点仅排除明确的状态字段格式（如 `剩余流量：10 GB`、`Expire: 日期`）或纯流量值（如 `100 GB`），支持机场 A/B 的既定名称前缀。名称中的裸 `GB`、Traffic 等不视为状态，`GB-01`、`GB-London-01` 保留为其他地区；未识别的状态格式需按实际订阅调整。此项由固定节点/状态表同时检查两个机场前缀与全部节点过滤。
+
 GitHub Actions 直接读取真实模板，检查安全默认值、固定地区表、引用、规则顺序及上传 DNS 策略；再仅替换订阅与规则下载方式，注入虚拟双机场节点，以固定版本 Mihomo `-t` 和控制器检查实际组成员、空组 REJECT、首次默认策略与已加载规则。公网规则引用在 CI 下载核对。DNS 检查覆盖配置与核心加载，不验证真实解析或客户端覆写；虚拟节点不验证实际连接质量。Surge 只有静态检查，尚未原生验证。
+
+Surge smart 空组行为尚未实现与 Mihomo REJECT 一致的封闭失败。受支持方案调查与待执行原生验收见 [Surge 验证记录](Surge/VALIDATION.md)。
