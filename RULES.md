@@ -46,6 +46,6 @@ Mihomo 的上传清单同时用于国内 DNS 策略，通过 AliDNS / DNSPod DIR
 
 ## 模板检查
 
-两端地区过滤统一忽略大小写，国家代码以字母数字边界识别；`US-01` 归美国，`AUS-Sydney` 归其他地区。保留中文、旗帜和 Hong、Tai、States 等既有别名。名称同时含多个地区仍需人工调整。
+两端地区过滤统一忽略大小写，国家代码及 Hong、Hong Kong、HongKong、Tai、Taiwan、Taipei 别名以字母数字边界识别；`US-01` 归美国，`AUS-Sydney`、`Thailand`、`Thai-Bangkok`、`Chongqing` 归其他地区。保留中文、旗帜和 States 等既有别名。名称同时含多个地区仍需人工调整。
 
 GitHub Actions 直接读取真实模板，检查安全默认值、固定地区表、引用、规则顺序及上传 DNS 策略；再仅替换订阅与规则下载方式，注入虚拟双机场节点，以固定版本 Mihomo `-t` 和控制器检查实际组成员、空组 REJECT、首次默认策略与已加载规则。公网规则引用在 CI 下载核对。DNS 检查覆盖配置与核心加载，不验证真实解析或客户端覆写；虚拟节点不验证实际连接质量。Surge 只有静态检查，尚未原生验证。

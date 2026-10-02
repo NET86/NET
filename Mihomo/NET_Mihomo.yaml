@@ -50,13 +50,13 @@ x-ip: &ip
   proxy: 资源下载
 
 # 地区依据节点名称判断；中转地与落地同时出现在名称中时需要人工调整。
-x-hk: &hk '(?i)(香港|Hong\s*Kong|Hong|🇭🇰|(^|[^A-Za-z0-9])HK([^A-Za-z0-9]|$))'
-x-tw: &tw '(?i)(台湾|台灣|Taiwan|Tai|🇹🇼|(^|[^A-Za-z0-9])TW([^A-Za-z0-9]|$))'
+x-hk: &hk '(?i)(香港|🇭🇰|(^|[^A-Za-z0-9])(Hong\s*Kong|Hong|HK)([^A-Za-z0-9]|$))'
+x-tw: &tw '(?i)(台湾|台灣|🇹🇼|(^|[^A-Za-z0-9])(Taiwan|Taipei|Tai|TW)([^A-Za-z0-9]|$))'
 x-jp: &jp '(?i)(日本|Japan|🇯🇵|(^|[^A-Za-z0-9])JP([^A-Za-z0-9]|$))'
 x-sg: &sg '(?i)(新加坡|狮城|獅城|Singapore|🇸🇬|(^|[^A-Za-z0-9])SG([^A-Za-z0-9]|$))'
 x-us: &us '(?i)(美国|美國|United\s*States|States|🇺🇸|(^|[^A-Za-z0-9])(US|USA)([^A-Za-z0-9]|$))'
 x-kr: &kr '(?i)(韩国|韓國|Korea|🇰🇷|(^|[^A-Za-z0-9])KR([^A-Za-z0-9]|$))'
-x-known-regions: &known-regions '(?i)(香港|Hong\s*Kong|Hong|🇭🇰|(^|[^A-Za-z0-9])HK([^A-Za-z0-9]|$)|台湾|台灣|Taiwan|Tai|🇹🇼|(^|[^A-Za-z0-9])TW([^A-Za-z0-9]|$)|日本|Japan|🇯🇵|(^|[^A-Za-z0-9])JP([^A-Za-z0-9]|$)|新加坡|狮城|獅城|Singapore|🇸🇬|(^|[^A-Za-z0-9])SG([^A-Za-z0-9]|$)|美国|美國|United\s*States|States|🇺🇸|(^|[^A-Za-z0-9])(US|USA)([^A-Za-z0-9]|$)|韩国|韓國|Korea|🇰🇷|(^|[^A-Za-z0-9])KR([^A-Za-z0-9]|$))'
+x-known-regions: &known-regions '(?i)(香港|🇭🇰|(^|[^A-Za-z0-9])(Hong\s*Kong|Hong|HK)([^A-Za-z0-9]|$)|台湾|台灣|🇹🇼|(^|[^A-Za-z0-9])(Taiwan|Taipei|Tai|TW)([^A-Za-z0-9]|$)|日本|Japan|🇯🇵|(^|[^A-Za-z0-9])JP([^A-Za-z0-9]|$)|新加坡|狮城|獅城|Singapore|🇸🇬|(^|[^A-Za-z0-9])SG([^A-Za-z0-9]|$)|美国|美國|United\s*States|States|🇺🇸|(^|[^A-Za-z0-9])(US|USA)([^A-Za-z0-9]|$)|韩国|韓國|Korea|🇰🇷|(^|[^A-Za-z0-9])KR([^A-Za-z0-9]|$))'
 x-service: &service
   type: select
   proxies: [节点选择, DIRECT, 香港, 台湾, 日本, 新加坡, 美国, 韩国, 其他地区, 机场 A, 机场 B, 全部节点]
