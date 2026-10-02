@@ -18,13 +18,13 @@ SURGE = (ROOT / "Surge/NET_Surge.conf").read_text()
 REGIONS = {"hk": "香港", "tw": "台湾", "jp": "日本", "sg": "新加坡", "us": "美国", "kr": "韩国"}
 # Fixed expectations include both clients' original aliases, not generated from regexes.
 CASES = {
-    "香港": ["HK-01", "hk-01", "香港", "🇭🇰", "Hong", "Hong Kong", "HongKong"],
-    "台湾": ["TW-01", "tw-01", "台湾", "台灣", "🇹🇼", "Taiwan", "Tai"],
+    "香港": ["HK-01", "hk-01", "香港", "🇭🇰", "Hong", "Hong Kong", "HongKong", "hong", "Hong-01", "HongKong-01"],
+    "台湾": ["TW-01", "tw-01", "台湾", "台灣", "🇹🇼", "Taiwan", "Tai", "Taipei", "tai", "Tai-01", "Taiwan-01", "Taipei-01"],
     "日本": ["JP-01", "jp-01", "日本", "🇯🇵", "Japan"],
     "新加坡": ["SG-01", "sg-01", "新加坡", "狮城", "獅城", "🇸🇬", "Singapore"],
     "美国": ["US-01", "us-01", "_US_", "USA-01", "usa-01", "美国", "美國", "🇺🇸", "United States", "States"],
     "韩国": ["KR-01", "kr-01", "韩国", "韓國", "🇰🇷", "Korea"],
-    "其他地区": ["AUS-Sydney", "aus-sydney", "RUS-01", "DE-01", "CUS-01", "US01", "XHK-01", "XJP-01", "XSG-01", "XTW-01", "XKR-01"],
+    "其他地区": ["AUS-Sydney", "aus-sydney", "RUS-01", "DE-01", "CUS-01", "US01", "XHK-01", "XJP-01", "XSG-01", "XTW-01", "XKR-01", "Thailand", "Thai-Bangkok", "Chongqing", "chongqing-01", "XHong", "HongX", "XHongKong", "HongKongX", "XTai", "TaiX", "XTaiwan", "TaiwanX", "XTaipei", "TaipeiX"],
 }
 
 
