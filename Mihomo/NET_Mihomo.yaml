@@ -50,13 +50,13 @@ x-ip: &ip
   proxy: 资源下载
 
 # 地区依据节点名称判断；中转地与落地同时出现在名称中时需要人工调整。
-x-hk: &hk '(?i)(香港|Hong\s*Kong|🇭🇰|\bHK\b)'
-x-tw: &tw '(?i)(台湾|台灣|Taiwan|🇹🇼|\bTW\b)'
-x-jp: &jp '(?i)(日本|Japan|🇯🇵|\bJP\b)'
-x-sg: &sg '(?i)(新加坡|狮城|獅城|Singapore|🇸🇬|\bSG\b)'
-x-us: &us '(?i)(美国|美國|United\s*States|USA|🇺🇸|\bUS\b)'
-x-kr: &kr '(?i)(韩国|韓國|Korea|🇰🇷|\bKR\b)'
-x-known-regions: &known-regions '(?i)(香港|Hong\s*Kong|🇭🇰|\bHK\b|台湾|台灣|Taiwan|🇹🇼|\bTW\b|日本|Japan|🇯🇵|\bJP\b|新加坡|狮城|獅城|Singapore|🇸🇬|\bSG\b|美国|美國|United\s*States|USA|🇺🇸|\bUS\b|韩国|韓國|Korea|🇰🇷|\bKR\b)'
+x-hk: &hk '(?i)(香港|🇭🇰|(^|[^A-Za-z0-9])(Hong\s*Kong|Hong|HK)([^A-Za-z0-9]|$))'
+x-tw: &tw '(?i)(台湾|台灣|🇹🇼|(^|[^A-Za-z0-9])(Taiwan|Taipei|Tai|TW)([^A-Za-z0-9]|$))'
+x-jp: &jp '(?i)(日本|Japan|🇯🇵|(^|[^A-Za-z0-9])JP([^A-Za-z0-9]|$))'
+x-sg: &sg '(?i)(新加坡|狮城|獅城|Singapore|🇸🇬|(^|[^A-Za-z0-9])SG([^A-Za-z0-9]|$))'
+x-us: &us '(?i)(美国|美國|United\s*States|States|🇺🇸|(^|[^A-Za-z0-9])(US|USA)([^A-Za-z0-9]|$))'
+x-kr: &kr '(?i)(韩国|韓國|Korea|🇰🇷|(^|[^A-Za-z0-9])KR([^A-Za-z0-9]|$))'
+x-known-regions: &known-regions '(?i)(香港|🇭🇰|(^|[^A-Za-z0-9])(Hong\s*Kong|Hong|HK)([^A-Za-z0-9]|$)|台湾|台灣|🇹🇼|(^|[^A-Za-z0-9])(Taiwan|Taipei|Tai|TW)([^A-Za-z0-9]|$)|日本|Japan|🇯🇵|(^|[^A-Za-z0-9])JP([^A-Za-z0-9]|$)|新加坡|狮城|獅城|Singapore|🇸🇬|(^|[^A-Za-z0-9])SG([^A-Za-z0-9]|$)|美国|美國|United\s*States|States|🇺🇸|(^|[^A-Za-z0-9])(US|USA)([^A-Za-z0-9]|$)|韩国|韓國|Korea|🇰🇷|(^|[^A-Za-z0-9])KR([^A-Za-z0-9]|$))'
 x-service: &service
   type: select
   proxies: [节点选择, DIRECT, 香港, 台湾, 日本, 新加坡, 美国, 韩国, 其他地区, 机场 A, 机场 B, 全部节点]
@@ -259,6 +259,14 @@ rule-providers:
     proxy: 资源下载
     path: ./rules/ai-daily.yaml
     url: https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml
+  Microsoft-Copilot:
+    <<: *classical
+    path: ./rules/microsoft-copilot.yaml
+    url: https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/microsoft-copilot.yaml
+  GitHub-Copilot:
+    <<: *classical
+    path: ./rules/github-copilot.yaml
+    url: https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/github-copilot.yaml
   Direct:
     <<: *classical
     path: ./rules/direct.yaml
@@ -351,16 +359,11 @@ rules:
   - IP-CIDR6,ff00::/8,DIRECT,no-resolve
   - RULE-SET,Private,DIRECT
   - RULE-SET,AI-Daily,AI
-  - DOMAIN,copilot-proxy.githubusercontent.com,AI
-  - DOMAIN,copilot-workspace.githubnext.com,AI
-  - DOMAIN,copilotprodattachments.blob.core.windows.net,AI
-  - DOMAIN-SUFFIX,githubcopilot.com,AI
+  - RULE-SET,Microsoft-Copilot,AI
+  - RULE-SET,GitHub-Copilot,AI
+  # 遥测保持显式走 AI，不交给通用 GitHub / 广告规则。
   - DOMAIN,copilot-telemetry-service.githubusercontent.com,AI
   - DOMAIN,copilot-telemetry.githubusercontent.com,AI
-  - DOMAIN-SUFFIX,copilot.microsoft.com,AI
-  - DOMAIN-SUFFIX,copilot.cloud.microsoft,AI
-  - DOMAIN-SUFFIX,copilot.com,AI
-  - DOMAIN-SUFFIX,copilot-stg.com,AI
   - RULE-SET,Direct,DIRECT
   - DOMAIN-SUFFIX,dl.delivery.mp.microsoft.com,DIRECT
   - DOMAIN-SUFFIX,update.microsoft.com,DIRECT

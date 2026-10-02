@@ -1,6 +1,6 @@
 # 公共分流规则
 
-通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)；AI 使用 [NET86/rules](https://github.com/NET86/rules) 的 stable/ai-daily；国内上传例外共用 [List/UploadCN.list](List/UploadCN.list)。Copilot 使用两端相同的精确域名和服务后缀规则。
+通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)；AI 使用 [NET86/rules](https://github.com/NET86/rules) 的 stable/ai-daily；国内上传例外共用 [List/UploadCN.list](List/UploadCN.list)。Copilot 另引用 stable 的 microsoft-copilot、github-copilot 完整厂商包，优先于通用 Microsoft/GitHub；两条 Copilot 遥测域名保持显式走 AI。
 
 ## 匹配顺序与策略
 
@@ -38,7 +38,14 @@ Surge 使用上游 `rule/Surge` 的 list；Mihomo 使用 `rule/Clash` 的 YAML�
 | Global | Global_All_No_Resolve.list | Global_Domain.yaml（domain）及 Global.yaml（classical） |
 | ChinaMax | ChinaMax_All_No_Resolve.list | ChinaMax_Domain.yaml（domain）、ChinaMax.yaml（classical）、ChinaMax_IP.yaml（ipcidr） |
 | AI | rules/surge/ai-daily.list | rules/mihomo/ai-daily.yaml（classical） |
+| Copilot | rules/surge/{microsoft-copilot,github-copilot}.list | rules/mihomo/{microsoft-copilot,github-copilot}.yaml（classical） |
 
 Mihomo 的 domain/ipcidr 集合承担大批量匹配，classical 集合补充关键词、进程、IP 等规则。两端统一分类、顺序和策略；官方适配清单的具体规则随引擎能力不同，Surge 的 USER-AGENT、URL-REGEX 不直接导入 Mihomo。单标签主机在 Surge 由 exclude-simple-hostnames 处理，在 Mihomo 由 DOMAIN-REGEX 处理。
 
 Mihomo 的上传清单同时用于国内 DNS 策略，通过 AliDNS / DNSPod DIRECT DoH 解析。客户端需保留该 DNS 策略，避免上传域名被境外解析结果带到代理出口。Surge 的 DNS 由其 General 设置与系统 DNS 控制。
+
+## 模板检查
+
+两端地区过滤统一忽略大小写，国家代码及 Hong、Hong Kong、HongKong、Tai、Taiwan、Taipei 别名以字母数字边界识别；`US-01` 归美国，`AUS-Sydney`、`Thailand`、`Thai-Bangkok`、`Chongqing` 归其他地区。保留中文、旗帜和 States 等既有别名。名称同时含多个地区仍需人工调整。
+
+GitHub Actions 直接读取真实模板，检查安全默认值、固定地区表、引用、规则顺序及上传 DNS 策略；再仅替换订阅与规则下载方式，注入虚拟双机场节点，以固定版本 Mihomo `-t` 和控制器检查实际组成员、空组 REJECT、首次默认策略与已加载规则。公网规则引用在 CI 下载核对。DNS 检查覆盖配置与核心加载，不验证真实解析或客户端覆写；虚拟节点不验证实际连接质量。Surge 只有静态检查，尚未原生验证。
