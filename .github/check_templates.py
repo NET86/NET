@@ -16,6 +16,18 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = yaml.safe_load((ROOT / "Mihomo/NET_Mihomo.yaml").read_text())
 SURGE = (ROOT / "Surge/NET_Surge.conf").read_text()
 REGIONS = {"hk": "香港", "tw": "台湾", "jp": "日本", "sg": "新加坡", "us": "美国", "kr": "韩国"}
+COPILOT_CORE_RULES = {
+    "DOMAIN,copilot.ai",
+    "DOMAIN-SUFFIX,copilot-stg.com",
+    "DOMAIN-SUFFIX,copilot.cloud.microsoft",
+    "DOMAIN-SUFFIX,copilot.com",
+    "DOMAIN-SUFFIX,copilot.microsoft.com",
+    "DOMAIN,copilot-proxy.githubusercontent.com",
+    "DOMAIN,copilot-workspace.githubnext.com",
+    "DOMAIN,copilotprodattachments.blob.core.windows.net",
+    "DOMAIN,origin-tracker.githubusercontent.com",
+    "DOMAIN-SUFFIX,githubcopilot.com",
+}
 # Fixed expectations include both clients' original aliases, not generated from regexes.
 CASES = {
     "香港": ["HK-01", "hk-01", "香港", "🇭🇰", "Hong", "Hong Kong", "HongKong", "hong", "Hong-01", "HongKong-01"],
@@ -113,7 +125,7 @@ def static_checks():
         assert policy in groups or policy in builtins, rule
         if parts[0] == "RULE-SET":
             assert parts[1] in CONFIG["rule-providers"], rule
-    ai_names = ["AI-Daily", "Microsoft-Copilot", "GitHub-Copilot"]
+    ai_names = ["AI-Daily"]
     for name in ai_names:
         provider = CONFIG["rule-providers"][name]
         assert provider["behavior"] == "classical" and provider["format"] == "yaml"
@@ -141,23 +153,19 @@ def cache_rules(home):
         content = (ROOT / "List/UploadCN.list").read_bytes() if name == "UploadCN" else fetch(provider["url"])
         assert content, name
         path.write_bytes(content)
-        if name in ["AI-Daily", "Microsoft-Copilot", "GitHub-Copilot"]:
+        if name == "AI-Daily":
             surge_url = provider["url"].replace("/mihomo/", "/surge/").replace(".yaml", ".list")
             payload = yaml.safe_load(content)["payload"]
             surge_payload = lines(fetch(surge_url).decode())
             assert payload and surge_payload, name
-            # ai-daily intentionally adapts regex to Surge wildcard; Copilot is domain-only.
-            if name != "AI-Daily":
-                assert payload == surge_payload, name
+            # Engine-specific syntax differs; Copilot's fixed domain rules are shared.
+            assert COPILOT_CORE_RULES <= set(payload), "Mihomo daily Copilot coverage"
+            assert COPILOT_CORE_RULES <= set(surge_payload), "Surge daily Copilot coverage"
             for host in ["microsoft.com", "github.com", "raw.githubusercontent.com"]:
                 for rule in payload:
                     kind, value = rule.split(",", 1)
                     assert not (kind == "DOMAIN" and host == value), (name, host)
                     assert not (kind == "DOMAIN-SUFFIX" and (host == value or host.endswith("." + value))), (name, host)
-            if name == "Microsoft-Copilot":
-                assert "DOMAIN,copilot.ai" in payload
-            if name == "GitHub-Copilot":
-                assert "DOMAIN,origin-tracker.githubusercontent.com" in payload
     print("Actual referenced upstream rules downloaded; AI formats and missing domains: passed")
 
 

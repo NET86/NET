@@ -259,14 +259,6 @@ rule-providers:
     proxy: 资源下载
     path: ./rules/ai-daily.yaml
     url: https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml
-  Microsoft-Copilot:
-    <<: *classical
-    path: ./rules/microsoft-copilot.yaml
-    url: https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/microsoft-copilot.yaml
-  GitHub-Copilot:
-    <<: *classical
-    path: ./rules/github-copilot.yaml
-    url: https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/github-copilot.yaml
   Direct:
     <<: *classical
     path: ./rules/direct.yaml
@@ -359,8 +351,6 @@ rules:
   - IP-CIDR6,ff00::/8,DIRECT,no-resolve
   - RULE-SET,Private,DIRECT
   - RULE-SET,AI-Daily,AI
-  - RULE-SET,Microsoft-Copilot,AI
-  - RULE-SET,GitHub-Copilot,AI
   # 遥测保持显式走 AI，不交给通用 GitHub / 广告规则。
   - DOMAIN,copilot-telemetry-service.githubusercontent.com,AI
   - DOMAIN,copilot-telemetry.githubusercontent.com,AI

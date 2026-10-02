@@ -1,6 +1,8 @@
 # 公共分流规则
 
-通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)；AI 使用 [NET86/rules](https://github.com/NET86/rules) 的 stable/ai-daily；国内上传例外共用 [List/UploadCN.list](List/UploadCN.list)。Copilot 另引用 stable 的 microsoft-copilot、github-copilot 完整厂商包，优先于通用 Microsoft/GitHub；两条 Copilot 遥测域名保持显式走 AI。
+通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script)；AI 使用 [NET86/rules](https://github.com/NET86/rules) 的 stable/ai-daily；国内上传例外共用 [List/UploadCN.list](List/UploadCN.list)。Copilot 已由 stable/ai-daily 完整覆盖，优先于通用 Microsoft/GitHub；NET 模板不重复加载两份厂商包，上游独立包仍保留。两条 Copilot 遥测域名保持显式走 AI。
+
+升级模板后，请在 Surge / Mihomo 客户端手动刷新 ai-daily 规则资源并重新加载配置，确认旧缓存已更新。
 
 ## 匹配顺序与策略
 
@@ -38,7 +40,6 @@ Surge 使用上游 `rule/Surge` 的 list；Mihomo 使用 `rule/Clash` 的 YAML�
 | Global | Global_All_No_Resolve.list | Global_Domain.yaml（domain）及 Global.yaml（classical） |
 | ChinaMax | ChinaMax_All_No_Resolve.list | ChinaMax_Domain.yaml（domain）、ChinaMax.yaml（classical）、ChinaMax_IP.yaml（ipcidr） |
 | AI | rules/surge/ai-daily.list | rules/mihomo/ai-daily.yaml（classical） |
-| Copilot | rules/surge/{microsoft-copilot,github-copilot}.list | rules/mihomo/{microsoft-copilot,github-copilot}.yaml（classical） |
 
 Mihomo 的 domain/ipcidr 集合承担大批量匹配，classical 集合补充关键词、进程、IP 等规则。两端统一分类、顺序和策略；官方适配清单的具体规则随引擎能力不同，Surge 的 USER-AGENT、URL-REGEX 不直接导入 Mihomo。单标签主机在 Surge 由 exclude-simple-hostnames 处理，在 Mihomo 由 DOMAIN-REGEX 处理。
 
