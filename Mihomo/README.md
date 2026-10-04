@@ -2,7 +2,7 @@
 
 双机场 Mihomo 配置模板。仓库仅使用“机场 A／机场 B”占位来源，不包含真实机场订阅或节点凭据。
 
-当前模板版本：**v0.3（2026-10-04）**。业务 DoH 跟随对应服务策略组，AnyTLS 保留节点默认的连接复用行为。
+当前模板版本：**v0.4（2026-10-04）**。国外业务共用 DoH，只有 AI / Copilot 保留跟随 AI 组的 DNS 例外；AnyTLS 保留默认连接复用行为。
 
 ## 使用
 
@@ -21,13 +21,15 @@ AI 规则使用 [NET86/rules 的 ai-daily](https://raw.githubusercontent.com/NET
 
 ## DNS 与 AnyTLS
 
-DNS 策略沿用域名分流顺序：AI → AI，Google / YouTube → Google，GitHub / Microsoft → Microsoft，Twitter、Telegram、Apple 各自使用对应策略组。未分类域名仍通过 `节点选择` 解析。
+DNS 按用途收敛：国内域名使用国内直连 DoH，普通国外域名共用 `节点选择` 出口的 Cloudflare / Google DoH；只有 AI / Copilot 通过 `AI` 组查询相同的国外解析器。Apple、Google、Microsoft、Twitter、Telegram 等不再各自绑定 DNS 出口，业务分流规则和各组选择不变。
 
-AI 等代理业务使用 Cloudflare / Google DoH；Apple 使用国内 AliDNS / DNSPod DoH 并跟随 Apple 策略组。节点域名及实际 DIRECT 出站连接使用国内直连 DNS，`direct-nameserver-follow-policy: false` 防止 DIRECT 出站受代理业务 DNS 策略影响。内网域名的普通 DNS 查询保留 `system`；如果系统 DNS 指向本核心，需要配置真实的内网 DNS，避免回环。DIRECT 出站解析不跟随这些内网策略，需要企业内网解析时应另行配置直连 DNS 或 hosts。
+同类国内规则合并引用，共用列表通过 YAML 锚点复用；国内上传优先于 AI，AI 优先于通用直连规则，Copilot 遥测仍显式跟随 AI。节点域名及实际 DIRECT 出站连接使用国内直连 DNS，`direct-nameserver-follow-policy: false` 防止 DIRECT 出站受代理业务 DNS 策略影响。内网域名的普通 DNS 查询保留 `system`；如果系统 DNS 指向本核心，需要配置真实的内网 DNS，避免回环。DIRECT 出站解析不跟随这些内网策略，需要企业内网解析时应另行配置直连 DNS 或 hosts。
 
 代理业务组选择 DIRECT 时，普通真实 DNS 查询中的海外 DoH 也会直连，可能在当前网络不可达；服务组的 DoH 出口与业务连接分别选择节点，自动组不能保证两者每次使用同一节点。
 
 模板不覆盖 `disable-reuse`，允许 AnyTLS 使用其默认会话复用机制；不强制修改上游节点的证书验证、空闲会话参数等字段。
+
+现有 AB 自动组继续使用 `url-test`，不增加日本主备组。节点及订阅健康检查保持 300 秒、`lazy: true`、5000 毫秒超时，地址为 `https://www.gstatic.com/generate_204`，预期状态码为 204；自动组容差为 100 毫秒，`max-failed-times` 沿用默认 5。检查只能判断检测地址的连通性，不能证明 AI 账号、地区或模型请求可用，也不会迁移已建立的连接。
 
 ## 验证
 

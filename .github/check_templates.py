@@ -119,21 +119,32 @@ def static_checks():
     assert dns["direct-nameserver-follow-policy"] is False
     assert all(s.endswith("#节点选择") for s in dns["nameserver"])
     policy = dns["nameserver-policy"]
-    for name, group in {"AI-Daily": "AI", "YouTube": "Google", "Google": "Google",
-                        "GitHub": "Microsoft", "Microsoft": "Microsoft", "Twitter": "Twitter",
-                        "Telegram": "Telegram"}.items():
-        assert policy[f"rule-set:{name}"] == [
-            f"https://1.1.1.1/dns-query#{group}", f"https://8.8.8.8/dns-query#{group}"]
-    for key in ["rule-set:Apple", "+.appstore.com"]:
-        assert policy[key] == ["https://dns.alidns.com/dns-query#Apple", "https://doh.pub/dns-query#Apple"]
+    assert policy["rule-set:AI-Daily"] == [
+        "https://1.1.1.1/dns-query#AI", "https://8.8.8.8/dns-query#AI"]
+    domestic_key = "rule-set:Direct,SteamCN,China,China-Extra"
+    cn_dns = ["https://dns.alidns.com/dns-query#DIRECT", "https://doh.pub/dns-query#DIRECT"]
+    assert policy[domestic_key] == dns["direct-nameserver"] == dns["proxy-server-nameserver"] == cn_dns
+    # Ordinary foreign services inherit nameserver rather than each pinning an exit.
+    for name in ["Apple", "YouTube", "Google", "GitHub", "Microsoft", "Twitter", "Telegram", "BiliIntl", "Global", "Global-Extra"]:
+        assert f"rule-set:{name}" not in policy, name
+    assert "+.appstore.com" not in policy
     for key in ["rule-set:Private", "*", "localhost", "+.lan", "+.local", "+.home.arpa", "+.localdomain", "+.internal"]:
         assert policy[key] == "system", key
     order = list(policy)
-    assert order.index("rule-set:AI-Daily") < order.index("rule-set:GitHub") < order.index("rule-set:Microsoft")
-    assert order.index("rule-set:YouTube") < order.index("rule-set:Google") < order.index("rule-set:Global")
+    assert order.index("rule-set:UploadCN") < order.index("rule-set:AI-Daily") < order.index(domestic_key)
     for host in ["copilot-telemetry-service.githubusercontent.com", "copilot-telemetry.githubusercontent.com"]:
         assert policy[host] == policy["rule-set:AI-Daily"]
-        assert order.index(host) < order.index("rule-set:GitHub")
+        assert order.index(host) < order.index(domestic_key)
+    dns_groups = groups.keys() | builtins
+    for key, resolvers in policy.items():
+        if key.startswith("rule-set:"):
+            assert set(key.removeprefix("rule-set:").split(",")) <= CONFIG["rule-providers"].keys(), key
+        for resolver in [resolvers] if isinstance(resolvers, str) else resolvers:
+            if "#" in resolver:
+                assert resolver.split("#", 1)[1] in dns_groups, (key, resolver)
+    for g in groups.values():
+        if g["type"] == "url-test":
+            assert (g["interval"], g["timeout"], g["tolerance"], g["lazy"], g["expected-status"], g.get("max-failed-times", 5)) == (300, 5000, 100, True, 204, 5)
     for provider in CONFIG["proxy-providers"].values():
         assert "disable-reuse" not in provider.get("override", {})
         assert not provider.get("override", {}).get("override-expr")
@@ -223,9 +234,10 @@ def native_check(binary, home, fixtures):
     config["profile"]["store-selected"] = False  # each scenario starts from template defaults
     path = home / "config.yaml"
     path.write_text(yaml.safe_dump(config, allow_unicode=True, sort_keys=False))
-    subprocess.run([binary, "-t", "-d", str(home), "-f", str(path)], check=True, timeout=90)
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    subprocess.run([binary, "-t", "-d", str(home), "-f", str(path)], check=True, timeout=90, creationflags=creationflags)
     with (home / "core.log").open("w") as log:
-        process = subprocess.Popen([binary, "-d", str(home), "-f", str(path)], stdout=log, stderr=log)
+        process = subprocess.Popen([binary, "-d", str(home), "-f", str(path)], stdout=log, stderr=log, creationflags=creationflags)
         try:
             for _ in range(100):
                 if process.poll() is not None:

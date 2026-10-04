@@ -1,4 +1,4 @@
-# NET_Mihomo · v0.3 · 2026-10-04
+# NET_Mihomo · v0.4 · 2026-10-04
 # 原生 Mihomo 双机场模板。仅填写两个订阅 URL，机场只提供节点。
 # 不含真实机场名称、订阅凭据或私人兼容规则；填写后的副本请勿公开。
 # 需要支持 PASS / empty-fallback 的 Mihomo。使用前阅读 README.md。
@@ -99,7 +99,7 @@ tun:
   auto-detect-interface: true
   dns-hijack: [any:53, 'tcp://any:53']
 
-# 3. DNS：节点与直连解析独立；业务域名的 DoH 跟随各自策略组。
+# 3. DNS：国内直连、国外共用；仅 AI / Copilot 跟随 AI 策略组。
 dns:
   enable: true
   listen: 127.0.0.1:1053
@@ -133,21 +133,16 @@ dns:
     - 'xbox.*.microsoft.com'
     - '*.xboxlive.com'
   default-nameserver: [223.5.5.5, 119.29.29.29]
-  proxy-server-nameserver:
-    - 'https://dns.alidns.com/dns-query#DIRECT'
-    - 'https://doh.pub/dns-query#DIRECT'
-  direct-nameserver:
-    - 'https://dns.alidns.com/dns-query#DIRECT'
-    - 'https://doh.pub/dns-query#DIRECT'
+  proxy-server-nameserver: &dns-cn
+  - https://dns.alidns.com/dns-query#DIRECT
+  - https://doh.pub/dns-query#DIRECT
+  direct-nameserver: *dns-cn
   direct-nameserver-follow-policy: false
   nameserver:
-    - 'https://1.1.1.1/dns-query#节点选择'
-    - 'https://8.8.8.8/dns-query#节点选择'
-  # 与域名分流顺序一致；业务 DoH 使用相应策略组。
+  - https://1.1.1.1/dns-query#节点选择
+  - https://8.8.8.8/dns-query#节点选择
   nameserver-policy:
-    rule-set:UploadCN:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
+    rule-set:UploadCN: *dns-cn
     '*': system
     localhost: system
     +.local: system
@@ -156,78 +151,18 @@ dns:
     +.localdomain: system
     +.internal: system
     rule-set:Private: system
-    rule-set:AI-Daily:
+    rule-set:AI-Daily: &dns-ai
     - https://1.1.1.1/dns-query#AI
     - https://8.8.8.8/dns-query#AI
-    copilot-telemetry-service.githubusercontent.com:
-    - https://1.1.1.1/dns-query#AI
-    - https://8.8.8.8/dns-query#AI
-    copilot-telemetry.githubusercontent.com:
-    - https://1.1.1.1/dns-query#AI
-    - https://8.8.8.8/dns-query#AI
-    rule-set:Direct:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    +.dl.delivery.mp.microsoft.com:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    +.update.microsoft.com:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    +.windowsupdate.com:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    +.windowsupdate.microsoft.com:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    www.msftconnecttest.com:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    dns.msftncsi.com:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    +.appstore.com:
-    - https://dns.alidns.com/dns-query#Apple
-    - https://doh.pub/dns-query#Apple
-    rule-set:Apple:
-    - https://dns.alidns.com/dns-query#Apple
-    - https://doh.pub/dns-query#Apple
-    rule-set:YouTube:
-    - https://1.1.1.1/dns-query#Google
-    - https://8.8.8.8/dns-query#Google
-    rule-set:Google:
-    - https://1.1.1.1/dns-query#Google
-    - https://8.8.8.8/dns-query#Google
-    rule-set:GitHub:
-    - https://1.1.1.1/dns-query#Microsoft
-    - https://8.8.8.8/dns-query#Microsoft
-    rule-set:Microsoft:
-    - https://1.1.1.1/dns-query#Microsoft
-    - https://8.8.8.8/dns-query#Microsoft
-    rule-set:Twitter:
-    - https://1.1.1.1/dns-query#Twitter
-    - https://8.8.8.8/dns-query#Twitter
-    rule-set:Telegram:
-    - https://1.1.1.1/dns-query#Telegram
-    - https://8.8.8.8/dns-query#Telegram
-    rule-set:SteamCN:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    rule-set:BiliIntl:
-    - https://1.1.1.1/dns-query#节点选择
-    - https://8.8.8.8/dns-query#节点选择
-    rule-set:Global:
-    - https://1.1.1.1/dns-query#节点选择
-    - https://8.8.8.8/dns-query#节点选择
-    rule-set:Global-Extra:
-    - https://1.1.1.1/dns-query#节点选择
-    - https://8.8.8.8/dns-query#节点选择
-    rule-set:China:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
-    rule-set:China-Extra:
-    - https://dns.alidns.com/dns-query#DIRECT
-    - https://doh.pub/dns-query#DIRECT
+    copilot-telemetry-service.githubusercontent.com: *dns-ai
+    copilot-telemetry.githubusercontent.com: *dns-ai
+    rule-set:Direct,SteamCN,China,China-Extra: *dns-cn
+    +.dl.delivery.mp.microsoft.com: *dns-cn
+    +.update.microsoft.com: *dns-cn
+    +.windowsupdate.com: *dns-cn
+    +.windowsupdate.microsoft.com: *dns-cn
+    www.msftconnecttest.com: *dns-cn
+    dns.msftncsi.com: *dns-cn
 
 # 只补充域名识别，默认不把目的地址改写成嗅探结果。
 sniffer:
