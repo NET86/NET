@@ -73,6 +73,12 @@ def static_checks():
         g = groups[name]
         assert g.get("default-selected", g["proxies"][0]) == default
     assert "广告过滤" not in groups
+    resource = groups["资源下载"]
+    assert set(resource) == {"name", "type", "use", "empty-fallback", "hidden"}
+    assert resource["type"] == "fallback" and resource["hidden"] is True
+    for provider in CONFIG["proxy-providers"].values():
+        hc = provider["health-check"]
+        assert (hc["enable"], hc["interval"], hc["timeout"], hc["lazy"], hc["expected-status"]) == (True, 300, 5000, True, 204)
     assert not {"Ads", "Ads-Extra"} & CONFIG["rule-providers"].keys()
     assert not any(",广告过滤" in rule or rule.startswith(("RULE-SET,Ads,", "RULE-SET,Ads-Extra,")) for rule in CONFIG["rules"])
     for provider in CONFIG["proxy-providers"].values():
@@ -258,6 +264,10 @@ def native_check(binary, home, fixtures):
                 raise AssertionError("Controller/providers did not become ready")
             for group in CONFIG["proxy-groups"]:
                 actual = proxies[group["name"]]
+                if group["name"] == "资源下载":
+                    # use-only fallback inherits provider health URL; no group task.
+                    inherited = next(CONFIG["proxy-providers"][n]["health-check"]["url"] for n in group["use"])
+                    assert actual["testUrl"] == inherited
                 if "use" in group:
                     expected = [name for key in group["use"] for name in expected_names[key]]
                     if "filter" in group:

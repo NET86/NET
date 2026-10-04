@@ -1,4 +1,4 @@
-# NET_Mihomo · v0.5 · 2026-10-04
+# NET_Mihomo · v0.6 · 2026-10-04
 # 原生 Mihomo 双机场模板。仅填写两个订阅 URL，机场只提供节点。
 # 不含真实机场名称、订阅凭据或私人兼容规则；填写后的副本请勿公开。
 # 需要支持 empty-fallback 的 Mihomo；恢复广告组还需支持 PASS。使用前阅读 README.md。
@@ -185,11 +185,6 @@ proxy-groups:
   - name: 资源下载
     type: fallback
     use: [AirportA, AirportB]
-    url: https://www.gstatic.com/generate_204
-    interval: 300
-    timeout: 5000
-    lazy: false
-    expected-status: 204
     empty-fallback: REJECT
     hidden: true
   - name: AI
