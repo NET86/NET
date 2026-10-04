@@ -1,7 +1,7 @@
-# NET_Mihomo · v0.4 · 2026-10-04
+# NET_Mihomo · v0.5 · 2026-10-04
 # 原生 Mihomo 双机场模板。仅填写两个订阅 URL，机场只提供节点。
 # 不含真实机场名称、订阅凭据或私人兼容规则；填写后的副本请勿公开。
-# 需要支持 PASS / empty-fallback 的 Mihomo。使用前阅读 README.md。
+# 需要支持 empty-fallback 的 Mihomo；恢复广告组还需支持 PASS。使用前阅读 README.md。
 
 # 共用参数：YAML 锚点在加载时展开，不需要 JavaScript 覆写。
 x-provider: &provider
@@ -205,8 +205,8 @@ proxy-groups:
     proxies: [DIRECT, 节点选择, 香港, 台湾, 日本, 新加坡, 美国, 韩国, 其他地区, 机场 A, 机场 B, 全部节点]
   - {name: Twitter, <<: *service}
   - {name: Telegram, <<: *service}
-  # 广告默认拦截；PASS 可关闭拦截并继续匹配规则。
-  - {name: 广告过滤, type: select, default-selected: REJECT, proxies: [PASS, REJECT]}
+  # 广告过滤暂时停用：分组、两条规则及两个规则源一并注释；启用时三处需同时恢复。
+  # - {name: 广告过滤, type: select, default-selected: REJECT, proxies: [PASS, REJECT]}
   - {name: 机场 A, type: select, use: [AirportA], empty-fallback: REJECT}
   - {name: 机场 B, type: select, use: [AirportB], empty-fallback: REJECT}
   - {name: 全部节点, type: select, use: [AirportA, AirportB], empty-fallback: REJECT}
@@ -267,14 +267,14 @@ rule-providers:
     <<: *classical
     path: ./rules/direct.yaml
     url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Direct/Direct.yaml
-  Ads:
-    <<: *domain
-    path: ./rules/ads.yaml
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising_Domain.yaml
-  Ads-Extra:
-    <<: *classical
-    path: ./rules/ads-extra.yaml
-    url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising.yaml
+  # Ads:
+    # <<: *domain
+    # path: ./rules/ads.yaml
+    # url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising_Domain.yaml
+  # Ads-Extra:
+    # <<: *classical
+    # path: ./rules/ads-extra.yaml
+    # url: https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising.yaml
   Apple:
     <<: *classical
     path: ./rules/apple.yaml
@@ -365,8 +365,8 @@ rules:
   - DOMAIN-SUFFIX,windowsupdate.microsoft.com,DIRECT
   - DOMAIN,www.msftconnecttest.com,DIRECT
   - DOMAIN,dns.msftncsi.com,DIRECT
-  - RULE-SET,Ads,广告过滤
-  - RULE-SET,Ads-Extra,广告过滤
+  # - RULE-SET,Ads,广告过滤
+  # - RULE-SET,Ads-Extra,广告过滤
   - DOMAIN-SUFFIX,appstore.com,Apple
   - RULE-SET,Apple,Apple
   - RULE-SET,YouTube,Google

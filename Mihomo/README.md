@@ -2,7 +2,7 @@
 
 双机场 Mihomo 配置模板。仓库仅使用“机场 A／机场 B”占位来源，不包含真实机场订阅或节点凭据。
 
-当前模板版本：**v0.4（2026-10-04）**。国外业务共用 DoH，只有 AI / Copilot 保留跟随 AI 组的 DNS 例外；AnyTLS 保留默认连接复用行为。
+当前模板版本：**v0.5（2026-10-04）**。停用暂不使用的广告分组、规则和规则源，避免 PASS 状态下仍加载广告规则。国外业务共用 DoH，只有 AI / Copilot 保留跟随 AI 组的 DNS 例外；AnyTLS 保留默认连接复用行为。
 
 ## 使用
 
@@ -13,7 +13,9 @@
 
 ## 分流
 
-服务组保留 Apple、AI、Google、Microsoft、Twitter、Telegram。AI 首次使用默认跟随 `节点选择`；GitHub 规则进入 Microsoft；未命中规则的流量进入 `节点选择`。`广告过滤` 首次使用默认 REJECT；选择 PASS 后继续匹配后续规则。客户端保存的手动选择优先于模板默认值。
+服务组保留 Apple、AI、Google、Microsoft、Twitter、Telegram。AI 首次使用默认跟随 `节点选择`；GitHub 规则进入 Microsoft；未命中规则的流量进入 `节点选择`。客户端保存的手动选择优先于模板默认值。
+
+`广告过滤` 分组、`Ads` / `Ads-Extra` 规则源及两条对应规则均已注释。PASS 只表示继续匹配后续规则，不会停止规则源下载和加载；暂不拦截广告时完整停用可减少无用资源占用。恢复广告过滤需同时取消这三处注释；公共模板恢复后首次默认 REJECT，已有客户端选择可能优先。Surge 的广告配置保持原样。
 
 AI 规则使用 [NET86/rules 的 ai-daily](https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml)，其中已包含 Microsoft/GitHub Copilot；NET 模板不重复加载两份厂商包，上游独立包仍保留。Copilot 遥测保持显式走 AI。通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 的官方 Clash 适配格式。两端分类、顺序、策略和格式映射见[公共分流说明](../RULES.md)。规则源及节点服务的可用性由上游提供方决定。
 

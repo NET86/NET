@@ -69,10 +69,12 @@ def static_checks():
         assert set(g.get("use", [])) <= CONFIG["proxy-providers"].keys(), g["name"]
         if "use" in g:
             assert g["empty-fallback"] == "REJECT", g["name"]
-    for name, default in {"AI": "节点选择", "Apple": "DIRECT", "节点选择": "DIRECT", "广告过滤": "REJECT"}.items():
+    for name, default in {"AI": "节点选择", "Apple": "DIRECT", "节点选择": "DIRECT"}.items():
         g = groups[name]
         assert g.get("default-selected", g["proxies"][0]) == default
-    assert groups["广告过滤"]["proxies"] == ["PASS", "REJECT"]
+    assert "广告过滤" not in groups
+    assert not {"Ads", "Ads-Extra"} & CONFIG["rule-providers"].keys()
+    assert not any(",广告过滤" in rule or rule.startswith(("RULE-SET,Ads,", "RULE-SET,Ads-Extra,")) for rule in CONFIG["rules"])
     for provider in CONFIG["proxy-providers"].values():
         assert provider["url"].startswith("https://example.com/REPLACE_")
     assert re.findall(r"policy-path=([^,\s]+)", SURGE) == [
@@ -163,14 +165,14 @@ def static_checks():
         url = provider["url"].replace("/mihomo/", "/surge/").replace(".yaml", ".list")
         ai_rule = f"RULE-SET,{name},AI"
         surge_rule = f"RULE-SET,{url},🧠 AI 服务"
-        for target in ["Direct", "Ads", "GitHub", "Microsoft"]:
-            policy = "DIRECT" if target == "Direct" else "广告过滤" if target == "Ads" else "Microsoft"
+        for target in ["Direct", "GitHub", "Microsoft"]:
+            policy = "DIRECT" if target == "Direct" else "Microsoft"
             assert rules.index(ai_rule) < rules.index(f"RULE-SET,{target},{policy}")
         for target in ["Direct/Direct.list", "Advertising/Advertising_All_No_Resolve.list", "GitHub/GitHub.list", "Microsoft/Microsoft.list"]:
             index = next(i for i, rule in enumerate(surge_rules) if target in rule)
             assert surge_rules.index(surge_rule) < index
     for host in ["copilot-telemetry-service.githubusercontent.com", "copilot-telemetry.githubusercontent.com"]:
-        assert rules.index(f"DOMAIN,{host},AI") < rules.index("RULE-SET,Ads,广告过滤")
+        assert rules.index(f"DOMAIN,{host},AI") < rules.index("RULE-SET,GitHub,Microsoft")
         assert surge_rules.index(f"DOMAIN,{host},🧠 AI 服务") < next(i for i, r in enumerate(surge_rules) if "Advertising/" in r)
     assert "RULE-SET,GitHub,Microsoft" in rules and "RULE-SET,Microsoft,Microsoft" in rules
     print("Safety defaults, region table, references, upload DNS and rule ordering: passed")
