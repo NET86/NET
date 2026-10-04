@@ -2,6 +2,8 @@
 
 双机场 Mihomo 配置模板。仓库仅使用“机场 A／机场 B”占位来源，不包含真实机场订阅或节点凭据。
 
+当前模板版本：**v0.3（2026-10-04）**。业务 DoH 跟随对应服务策略组，AnyTLS 保留节点默认的连接复用行为。
+
 ## 使用
 
 1. 将 `NET_Mihomo.yaml` 复制到私人配置，填写 `AirportA`、`AirportB` 的订阅地址；至少配置一个有效来源。
@@ -16,6 +18,16 @@
 AI 规则使用 [NET86/rules 的 ai-daily](https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml)，其中已包含 Microsoft/GitHub Copilot；NET 模板不重复加载两份厂商包，上游独立包仍保留。Copilot 遥测保持显式走 AI。通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 的官方 Clash 适配格式。两端分类、顺序、策略和格式映射见[公共分流说明](../RULES.md)。规则源及节点服务的可用性由上游提供方决定。
 
 升级模板后，请手动刷新 ai-daily 规则资源并重新加载配置，确认客户端缓存包含新增 Copilot 域名。
+
+## DNS 与 AnyTLS
+
+DNS 策略沿用域名分流顺序：AI → AI，Google / YouTube → Google，GitHub / Microsoft → Microsoft，Twitter、Telegram、Apple 各自使用对应策略组。未分类域名仍通过 `节点选择` 解析。
+
+AI 等代理业务使用 Cloudflare / Google DoH；Apple 使用国内 AliDNS / DNSPod DoH 并跟随 Apple 策略组。节点域名及实际 DIRECT 出站连接使用国内直连 DNS，`direct-nameserver-follow-policy: false` 防止 DIRECT 出站受代理业务 DNS 策略影响。内网域名的普通 DNS 查询保留 `system`；如果系统 DNS 指向本核心，需要配置真实的内网 DNS，避免回环。DIRECT 出站解析不跟随这些内网策略，需要企业内网解析时应另行配置直连 DNS 或 hosts。
+
+代理业务组选择 DIRECT 时，普通真实 DNS 查询中的海外 DoH 也会直连，可能在当前网络不可达；服务组的 DoH 出口与业务连接分别选择节点，自动组不能保证两者每次使用同一节点。
+
+模板不覆盖 `disable-reuse`，允许 AnyTLS 使用其默认会话复用机制；不强制修改上游节点的证书验证、空闲会话参数等字段。
 
 ## 验证
 

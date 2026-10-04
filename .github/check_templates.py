@@ -4,6 +4,7 @@ import copy
 import json
 from pathlib import Path
 import re
+import socket
 import subprocess
 import sys
 import tempfile
@@ -115,8 +116,27 @@ def static_checks():
     dns = CONFIG["dns"]
     assert dns["nameserver-policy"]["rule-set:UploadCN"] == [
         "https://dns.alidns.com/dns-query#DIRECT", "https://doh.pub/dns-query#DIRECT"]
-    assert dns["direct-nameserver-follow-policy"] is True
+    assert dns["direct-nameserver-follow-policy"] is False
     assert all(s.endswith("#节点选择") for s in dns["nameserver"])
+    policy = dns["nameserver-policy"]
+    for name, group in {"AI-Daily": "AI", "YouTube": "Google", "Google": "Google",
+                        "GitHub": "Microsoft", "Microsoft": "Microsoft", "Twitter": "Twitter",
+                        "Telegram": "Telegram"}.items():
+        assert policy[f"rule-set:{name}"] == [
+            f"https://1.1.1.1/dns-query#{group}", f"https://8.8.8.8/dns-query#{group}"]
+    for key in ["rule-set:Apple", "+.appstore.com"]:
+        assert policy[key] == ["https://dns.alidns.com/dns-query#Apple", "https://doh.pub/dns-query#Apple"]
+    for key in ["rule-set:Private", "*", "localhost", "+.lan", "+.local", "+.home.arpa", "+.localdomain", "+.internal"]:
+        assert policy[key] == "system", key
+    order = list(policy)
+    assert order.index("rule-set:AI-Daily") < order.index("rule-set:GitHub") < order.index("rule-set:Microsoft")
+    assert order.index("rule-set:YouTube") < order.index("rule-set:Google") < order.index("rule-set:Global")
+    for host in ["copilot-telemetry-service.githubusercontent.com", "copilot-telemetry.githubusercontent.com"]:
+        assert policy[host] == policy["rule-set:AI-Daily"]
+        assert order.index(host) < order.index("rule-set:GitHub")
+    for provider in CONFIG["proxy-providers"].values():
+        assert "disable-reuse" not in provider.get("override", {})
+        assert not provider.get("override", {}).get("override-expr")
     assert rules[-1] == "MATCH,节点选择"
     # All provider/group references must resolve, in the actual ordered rule array.
     for rule in rules:
@@ -169,12 +189,19 @@ def cache_rules(home):
     print("Actual referenced upstream rules downloaded; AI formats and missing domains: passed")
 
 
-def api(path):
-    return json.loads(fetch("http://127.0.0.1:9090" + path))
+def api(path, base):
+    return json.loads(fetch(base + path))
 
 
 def native_check(binary, home, fixtures):
     config = copy.deepcopy(CONFIG)
+    # Use isolated listeners so local verification cannot target a running client.
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        controller_port = listener.getsockname()[1]
+    base = f"http://127.0.0.1:{controller_port}"
+    config["mixed-port"] = 0
+    config["dns"]["listen"] = ""
     expected_names = {}
     for index, (key, provider) in enumerate(config["proxy-providers"].items()):
         names = fixtures[index]
@@ -192,7 +219,7 @@ def native_check(binary, home, fixtures):
     for provider in config["rule-providers"].values():
         provider["type"] = "file"
         provider.pop("url")
-    config["external-controller"] = "127.0.0.1:9090"
+    config["external-controller"] = f"127.0.0.1:{controller_port}"
     config["profile"]["store-selected"] = False  # each scenario starts from template defaults
     path = home / "config.yaml"
     path.write_text(yaml.safe_dump(config, allow_unicode=True, sort_keys=False))
@@ -204,9 +231,9 @@ def native_check(binary, home, fixtures):
                 if process.poll() is not None:
                     raise AssertionError("Mihomo exited before controller became ready")
                 try:
-                    proxies = api("/proxies")["proxies"]
-                    providers = api("/providers/proxies")["providers"]
-                    rule_providers = api("/providers/rules")["providers"]
+                    proxies = api("/proxies", base)["proxies"]
+                    providers = api("/providers/proxies", base)["providers"]
+                    rule_providers = api("/providers/rules", base)["providers"]
                     if (all(len(providers[key]["proxies"]) == len(names) for key, names in expected_names.items())
                             and all(rule_providers[name]["ruleCount"] > 0 for name in CONFIG["rule-providers"])):
                         break
@@ -227,7 +254,7 @@ def native_check(binary, home, fixtures):
                 elif group["type"] == "select":
                     assert actual["all"] == group["proxies"], group["name"]
                     assert actual["now"] == group.get("default-selected", group["proxies"][0]), group["name"]
-            actual_rules = api("/rules")["rules"]
+            actual_rules = api("/rules", base)["rules"]
             assert len(actual_rules) == len(CONFIG["rules"])
             for raw, actual in zip(CONFIG["rules"], actual_rules):
                 parts = raw.split(",")
@@ -235,7 +262,7 @@ def native_check(binary, home, fixtures):
                 assert actual["proxy"] == policy, (raw, actual)
                 if parts[0] == "RULE-SET":
                     assert actual["type"] == "RuleSet" and actual["payload"] == parts[1], (raw, actual)
-            rule_providers = api("/providers/rules")["providers"]
+            rule_providers = api("/providers/rules", base)["providers"]
             assert all(rule_providers[name]["ruleCount"] > 0 for name in CONFIG["rule-providers"])
         finally:
             process.terminate()
