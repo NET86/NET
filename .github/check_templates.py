@@ -1,6 +1,7 @@
 """CI-only checks: read shipping templates; never read private subscriptions."""
 
 import copy
+import ipaddress
 import json
 from pathlib import Path
 import re
@@ -14,8 +15,8 @@ from urllib.request import urlopen
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG = yaml.safe_load((ROOT / "Mihomo/NET_Mihomo.yaml").read_text())
-SURGE = (ROOT / "Surge/NET_Surge.conf").read_text()
+CONFIG = yaml.safe_load((ROOT / "Mihomo/NET_Mihomo.yaml").read_text(encoding="utf-8"))
+SURGE = (ROOT / "Surge/NET_Surge.conf").read_text(encoding="utf-8")
 REGIONS = {"hk": "香港", "tw": "台湾", "jp": "日本", "sg": "新加坡", "us": "美国", "kr": "韩国"}
 COPILOT_CORE_RULES = {
     "DOMAIN,copilot.ai",
@@ -136,7 +137,7 @@ def static_checks():
     assert rules[0] == "RULE-SET,UploadCN,DIRECT"
     upload_url = CONFIG["rule-providers"]["UploadCN"]["url"]
     assert surge_rules[0] == f"RULE-SET,{upload_url},DIRECT"
-    upload = lines((ROOT / "List/UploadCN.list").read_text())
+    upload = lines((ROOT / "List/UploadCN.list").read_text(encoding="utf-8"))
     assert upload and all(re.fullmatch(r"DOMAIN,[a-z0-9.-]+", r) for r in upload)
     dns = CONFIG["dns"]
     assert dns["nameserver-policy"]["rule-set:UploadCN"] == [
@@ -201,17 +202,66 @@ def static_checks():
     print("Safety defaults, region table, references, upload DNS and rule ordering: passed")
 
 
+def provider_payload(name, provider, content):
+    """Return source entries the declared provider can load without semantic loss."""
+    if provider["format"] == "text":
+        payload = lines(content.decode())
+    elif provider["format"] == "yaml":
+        document = yaml.safe_load(content)
+        assert isinstance(document, dict) and "payload" in document, provider
+        payload = document["payload"]
+        assert isinstance(payload, list), provider
+    else:
+        raise AssertionError(("unsupported provider format", provider["format"]))
+    assert payload and all(isinstance(item, str) and item.strip() for item in payload), provider
+    if provider["behavior"] != "ipcidr":
+        return payload
+
+    compatible, incompatible = [], []
+    for item in payload:
+        try:
+            ipaddress.ip_network(item, strict=False)
+            compatible.append(item)
+        except ValueError:
+            incompatible.append(item)
+
+    if name == "China-IP":
+        assert incompatible == ["132203"], ("unexpected China-IP non-CIDR entries", incompatible)
+        assert "IP-ASN,132203,DIRECT" in CONFIG["rules"], "China-IP ASN exception lost explicit routing"
+    else:
+        assert not incompatible, (name, "invalid ipcidr provider entries", incompatible)
+    return compatible
+
+
+def assert_no_rule_provider_warnings(text):
+    suspicious = []
+    for line in text.splitlines():
+        lowered = line.casefold()
+        if "invalid ipcidr:[132203]" in lowered:
+            assert "IP-ASN,132203,DIRECT" in CONFIG["rules"]
+            continue
+        if (
+            ("warn" in lowered or "warning" in lowered)
+            and ("rule" in lowered or "provider" in lowered)
+            and any(token in lowered for token in ("invalid", "unsupported", "fail", "error", "skip", "drop"))
+        ):
+            suspicious.append(line)
+    assert not suspicious, {"rule/provider parse warnings": suspicious}
+
+
 def cache_rules(home):
     """Keep real provider formats/content; only substitute transport for CI."""
+    expected_rule_counts = {}
     for name, provider in CONFIG["rule-providers"].items():
         path = home / provider["path"]
         path.parent.mkdir(parents=True, exist_ok=True)
         content = (ROOT / "List/UploadCN.list").read_bytes() if name == "UploadCN" else fetch(provider["url"])
         assert content, name
         path.write_bytes(content)
+        payload = provider_payload(name, provider, content)
+        expected_rule_counts[name] = len(payload)
         if name == "AI-Daily":
             surge_url = provider["url"].replace("/mihomo/", "/surge/").replace(".yaml", ".list")
-            payload = yaml.safe_load(content)["payload"]
             surge_payload = lines(fetch(surge_url).decode())
             assert payload and surge_payload, name
             # Engine-specific syntax differs; Copilot's fixed domain rules are shared.
@@ -223,13 +273,13 @@ def cache_rules(home):
                     assert not (kind == "DOMAIN" and host == value), (name, host)
                     assert not (kind == "DOMAIN-SUFFIX" and (host == value or host.endswith("." + value))), (name, host)
     print("Actual referenced upstream rules downloaded; AI formats and missing domains: passed")
-
+    return expected_rule_counts
 
 def api(path, base):
     return json.loads(fetch(base + path))
 
 
-def native_check(binary, home, fixtures):
+def native_check(binary, home, fixtures, expected_rule_counts):
     config = copy.deepcopy(CONFIG)
     # Use isolated listeners so local verification cannot target a running client.
     with socket.socket() as listener:
@@ -264,7 +314,16 @@ def native_check(binary, home, fixtures):
     path = home / "config.yaml"
     path.write_text(yaml.safe_dump(config, allow_unicode=True, sort_keys=False))
     creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-    subprocess.run([binary, "-t", "-d", str(home), "-f", str(path)], check=True, timeout=90, creationflags=creationflags)
+    parsed = subprocess.run(
+        [binary, "-t", "-d", str(home), "-f", str(path)],
+        capture_output=True,
+        text=True,
+        timeout=90,
+        creationflags=creationflags,
+    )
+    if parsed.returncode:
+        raise AssertionError(parsed.stdout + parsed.stderr)
+    assert_no_rule_provider_warnings(parsed.stdout + parsed.stderr)
     with (home / "core.log").open("w") as log:
         process = subprocess.Popen([binary, "-d", str(home), "-f", str(path)], stdout=log, stderr=log, creationflags=creationflags)
         try:
@@ -275,14 +334,28 @@ def native_check(binary, home, fixtures):
                     proxies = api("/proxies", base)["proxies"]
                     providers = api("/providers/proxies", base)["providers"]
                     rule_providers = api("/providers/rules", base)["providers"]
-                    if (all(len(providers[key]["proxies"]) == len(names) for key, names in expected_names.items())
-                            and all(rule_providers[name]["ruleCount"] > 0 for name in CONFIG["rule-providers"])):
+                    if (
+                        all(len(providers[key]["proxies"]) == len(names) for key, names in expected_names.items())
+                        and all(
+                            rule_providers[name]["ruleCount"] == expected_rule_counts[name]
+                            for name in CONFIG["rule-providers"]
+                        )
+                    ):
                         break
                 except (OSError, KeyError):
                     pass
                 time.sleep(0.1)
             else:
-                raise AssertionError("Controller/providers did not become ready")
+                rule_counts = {
+                    name: (
+                        rule_providers.get(name, {}).get("ruleCount"),
+                        expected_rule_counts[name],
+                    )
+                    for name in CONFIG["rule-providers"]
+                }
+                raise AssertionError(
+                    f"Controller/providers did not become fully ready; rule counts actual/expected={rule_counts}"
+                )
             for key, expected in expected_names.items():
                 actual_provider_names = [node["name"] for node in providers[key]["proxies"]]
                 assert actual_provider_names == expected, (key, actual_provider_names, expected)
@@ -311,7 +384,13 @@ def native_check(binary, home, fixtures):
                 if parts[0] == "RULE-SET":
                     assert actual["type"] == "RuleSet" and actual["payload"] == parts[1], (raw, actual)
             rule_providers = api("/providers/rules", base)["providers"]
-            assert all(rule_providers[name]["ruleCount"] > 0 for name in CONFIG["rule-providers"])
+            assert all(
+                rule_providers[name]["ruleCount"] == expected_rule_counts[name]
+                for name in CONFIG["rule-providers"]
+            ), {
+                name: (rule_providers[name]["ruleCount"], expected_rule_counts[name])
+                for name in CONFIG["rule-providers"]
+            }
         finally:
             process.terminate()
             try:
@@ -319,8 +398,12 @@ def native_check(binary, home, fixtures):
             except subprocess.TimeoutExpired:
                 process.kill()
                 process.wait()
+            log.flush()
+            runtime_log = (home / "core.log").read_text(encoding="utf-8", errors="replace")
             if sys.exc_info()[0]:
-                print((home / "core.log").read_text())
+                print(runtime_log)
+            else:
+                assert_no_rule_provider_warnings(runtime_log)
 
 
 def main():
@@ -341,12 +424,12 @@ def main():
     }
     with tempfile.TemporaryDirectory(prefix="net-template-") as directory:
         home = Path(directory)
-        cache_rules(home)
+        expected_rule_counts = cache_rules(home)
         # MaxMind's official test database, pinned; only verifies native GEOIP loading.
         geoip = fetch("https://raw.githubusercontent.com/maxmind/MaxMind-DB/276926d23b4109ca5452709bfb5931c338afb34c/test-data/GeoIP2-Country-Test.mmdb")
         (home / "Country.mmdb").write_bytes(geoip)
         for title, fixtures in scenarios.items():
-            native_check(binary, home, fixtures)
+            native_check(binary, home, fixtures, expected_rule_counts)
             print(f"Mihomo parse, actual group membership/defaults and loaded rules ({title}): passed")
     print("Surge: static checks only; no native Surge validation available in CI")
 
