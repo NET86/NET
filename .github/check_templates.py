@@ -383,6 +383,8 @@ def native_check(binary, home, fixtures, expected_rule_counts):
                 assert actual["proxy"] == policy, (raw, actual)
                 if parts[0] == "RULE-SET":
                     assert actual["type"] == "RuleSet" and actual["payload"] == parts[1], (raw, actual)
+                elif parts[0] == "IP-ASN":
+                    assert actual["type"] in {"IP-ASN", "IPASN"} and actual["payload"] == parts[1], (raw, actual)
             rule_providers = api("/providers/rules", base)["providers"]
             assert all(
                 rule_providers[name]["ruleCount"] == expected_rule_counts[name]
@@ -404,6 +406,86 @@ def native_check(binary, home, fixtures, expected_rule_counts):
                 print(runtime_log)
             else:
                 assert_no_rule_provider_warnings(runtime_log)
+
+
+def native_asn_match_check(binary, home):
+    """Prove the core actually matches IP-ASN using a pinned MaxMind test DB."""
+    asn_home = home / "asn-match"
+    asn_home.mkdir()
+    asn = fetch(
+        "https://raw.githubusercontent.com/maxmind/MaxMind-DB/"
+        "276926d23b4109ca5452709bfb5931c338afb34c/test-data/GeoLite2-ASN-Test.mmdb"
+    )
+    (asn_home / "ASN.mmdb").write_bytes(asn)
+
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        controller_port = listener.getsockname()[1]
+    with socket.socket() as listener:
+        listener.bind(("127.0.0.1", 0))
+        mixed_port = listener.getsockname()[1]
+
+    config = {
+        "mixed-port": mixed_port,
+        "external-controller": f"127.0.0.1:{controller_port}",
+        "log-level": "info",
+        "ipv6": False,
+        "profile": {"store-selected": False, "store-fake-ip": False},
+        "rules": [
+            "IP-ASN,15169,REJECT",
+            "MATCH,DIRECT",
+        ],
+    }
+    path = asn_home / "config.yaml"
+    path.write_text(yaml.safe_dump(config, sort_keys=False))
+    creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+    with (asn_home / "core.log").open("w") as log:
+        process = subprocess.Popen(
+            [binary, "-d", str(asn_home), "-f", str(path)],
+            stdout=log,
+            stderr=log,
+            creationflags=creationflags,
+        )
+        try:
+            base = f"http://127.0.0.1:{controller_port}"
+            for _ in range(100):
+                if process.poll() is not None:
+                    raise AssertionError("Mihomo exited before ASN controller became ready")
+                try:
+                    first = api("/rules", base)["rules"][0]
+                    if first["payload"] == "15169":
+                        break
+                except (OSError, KeyError, IndexError):
+                    pass
+                time.sleep(0.1)
+            else:
+                raise AssertionError("ASN test controller did not become ready")
+
+            assert first["type"] in {"IP-ASN", "IPASN"} and first["proxy"] == "REJECT", first
+            with socket.create_connection(("127.0.0.1", mixed_port), timeout=5) as client:
+                client.sendall(
+                    b"CONNECT 1.0.0.1:80 HTTP/1.1\r\n"
+                    b"Host: 1.0.0.1:80\r\n\r\n"
+                )
+                try:
+                    client.recv(1024)
+                except (ConnectionResetError, TimeoutError):
+                    pass
+
+            for _ in range(50):
+                first = api("/rules", base)["rules"][0]
+                if first.get("extra", {}).get("hitCount", 0) >= 1:
+                    break
+                time.sleep(0.1)
+            else:
+                raise AssertionError(f"IP-ASN rule did not record a data-plane hit: {first}")
+        finally:
+            process.terminate()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
 
 
 def main():
@@ -428,6 +510,8 @@ def main():
         # MaxMind's official test database, pinned; only verifies native GEOIP loading.
         geoip = fetch("https://raw.githubusercontent.com/maxmind/MaxMind-DB/276926d23b4109ca5452709bfb5931c338afb34c/test-data/GeoIP2-Country-Test.mmdb")
         (home / "Country.mmdb").write_bytes(geoip)
+        native_asn_match_check(binary, home)
+        print("Mihomo IP-ASN native recognition and data-plane match: passed")
         for title, fixtures in scenarios.items():
             native_check(binary, home, fixtures, expected_rule_counts)
             print(f"Mihomo parse, actual group membership/defaults and loaded rules ({title}): passed")
