@@ -433,7 +433,7 @@ def native_asn_match_check(binary, home):
         "profile": {"store-selected": False, "store-fake-ip": False},
         "rules": [
             "IP-ASN,15169,REJECT",
-            "MATCH,DIRECT",
+            "MATCH,REJECT",
         ],
     }
     path = asn_home / "config.yaml"
@@ -479,6 +479,8 @@ def native_asn_match_check(binary, home):
                 time.sleep(0.1)
             else:
                 raise AssertionError(f"IP-ASN rule did not record a data-plane hit: {first}")
+            fallback = api("/rules", base)["rules"][1]
+            assert fallback.get("extra", {}).get("hitCount", 0) == 0, fallback
         finally:
             process.terminate()
             try:
