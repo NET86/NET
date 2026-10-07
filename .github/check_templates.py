@@ -40,6 +40,20 @@ CASES = {
     "其他地区": ["AUS-Sydney", "aus-sydney", "RUS-01", "DE-01", "CUS-01", "US01", "XHK-01", "XJP-01", "XSG-01", "XTW-01", "XKR-01", "Thailand", "Thai-Bangkok", "Chongqing", "chongqing-01", "XHong", "HongX", "XHongKong", "HongKongX", "XTai", "TaiX", "XTaiwan", "TaiwanX", "XTaipei", "TaipeiX", "GB-01", "GB-London-01", "London-GB-02"],
 }
 SURGE_OTHER_NAMES = ["Traffic-Node-01", "Expire-Node-01", "官网线路-01", "套餐专线-01", "更新线路-01"]
+MIHOMO_PROVIDER_VALID_NAMES = [
+    "Traffic-Node-01", "Expire-Node-01", "Remaining-Pool-HK", "Reset-US-01",
+    "官网线路-01", "机场官网线路", "MyTraffic: Fast", "100 GB",
+    "Traffic 4 JP", "Traffic: 100 GB Tokyo", "Expire: 2026-12-31 JP",
+    "剩余流量：10 Gbps专线", "机场 A-官网: 官网线路", "Traffic100GB", "Remaining 3 JP",
+]
+MIHOMO_PROVIDER_STATUS_NAMES = [
+    "剩余流量：10 GB", "机场 A-剩余流量: 100GB", "套餐到期：2026-12-31",
+    "距离下次重置: 3天", "到期时间: 2026-12-31", "机场 B-流量: 100GB",
+    "Remaining Traffic: 100 GB", "机场 A-Traffic: 100 GB", "Expire: 2026-12-31",
+    "Reset 3 days", "官网", "机场 B-官网", "导航页", "机场公告",
+    "Traffic: 10 GiB / 100 GiB", "机场 B-官网: https://example.com",
+    "Expire: 2026-12-31 23:59:00Z",
+]
 # Only explicit status/traffic formats are metadata; tokens inside node names are not.
 STATUS_NAMES = [
     "剩余流量：10 GB", "流量: 100GB", "套餐到期：2026-12-31", "距离下次重置: 3天",
@@ -79,6 +93,9 @@ def static_checks():
     for provider in CONFIG["proxy-providers"].values():
         hc = provider["health-check"]
         assert (hc["enable"], hc["interval"], hc["timeout"], hc["lazy"], hc["expected-status"]) == (True, 300, 5000, True, 204)
+    provider_filter = CONFIG["x-provider"]["exclude-filter"]
+    assert all(not re.search(provider_filter, name) for name in MIHOMO_PROVIDER_VALID_NAMES)
+    assert all(re.search(provider_filter, name) for name in MIHOMO_PROVIDER_STATUS_NAMES)
     assert not {"Ads", "Ads-Extra"} & CONFIG["rule-providers"].keys()
     assert not any(",广告过滤" in rule or rule.startswith(("RULE-SET,Ads,", "RULE-SET,Ads-Extra,")) for rule in CONFIG["rules"])
     for provider in CONFIG["proxy-providers"].values():
@@ -225,7 +242,11 @@ def native_check(binary, home, fixtures):
     for index, (key, provider) in enumerate(config["proxy-providers"].items()):
         names = fixtures[index]
         prefix = provider["override"]["additional-prefix"]
-        expected_names[key] = [prefix + name for name in names]
+        # Fixed accept/reject table is the oracle, not the regex under test.
+        expected_names[key] = [
+            prefix + name for name in names
+            if name not in MIHOMO_PROVIDER_STATUS_NAMES
+        ]
         path = home / provider["path"]
         path.parent.mkdir(parents=True, exist_ok=True)
         # Documentation-only addresses, no credentials and no real subscription calls.
@@ -262,6 +283,9 @@ def native_check(binary, home, fixtures):
                 time.sleep(0.1)
             else:
                 raise AssertionError("Controller/providers did not become ready")
+            for key, expected in expected_names.items():
+                actual_provider_names = [node["name"] for node in providers[key]["proxies"]]
+                assert actual_provider_names == expected, (key, actual_provider_names, expected)
             for group in CONFIG["proxy-groups"]:
                 actual = proxies[group["name"]]
                 if group["name"] == "资源下载":
@@ -307,6 +331,13 @@ def main():
         "two-airport region table": [all_names[::2], all_names[1::2]],
         "missing regions": [["US-01"], ["DE-01"]],
         "all supported regions empty": [["AUS-Sydney"], ["DE-01"]],
+        "metadata-like legitimate node names": [
+            MIHOMO_PROVIDER_VALID_NAMES[::2], MIHOMO_PROVIDER_VALID_NAMES[1::2]
+        ],
+        "provider status filtering": [
+            MIHOMO_PROVIDER_VALID_NAMES[::2] + MIHOMO_PROVIDER_STATUS_NAMES[::2],
+            MIHOMO_PROVIDER_VALID_NAMES[1::2] + MIHOMO_PROVIDER_STATUS_NAMES[1::2],
+        ],
     }
     with tempfile.TemporaryDirectory(prefix="net-template-") as directory:
         home = Path(directory)
