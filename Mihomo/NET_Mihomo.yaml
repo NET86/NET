@@ -376,6 +376,8 @@ rules:
   - RULE-SET,Global-Extra,节点选择
   - RULE-SET,China,DIRECT
   - RULE-SET,China-Extra,DIRECT
+  # ChinaMax_IP 上游当前混入一条 ASN；ipcidr provider 无法承载，显式保留其路由语义。
+  - IP-ASN,132203,DIRECT
   - RULE-SET,China-IP,DIRECT
   - GEOIP,CN,DIRECT
   - MATCH,节点选择

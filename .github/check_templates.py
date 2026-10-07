@@ -202,8 +202,8 @@ def static_checks():
     print("Safety defaults, region table, references, upload DNS and rule ordering: passed")
 
 
-def provider_payload(provider, content):
-    """Return the exact source entries Mihomo is expected to load."""
+def provider_payload(name, provider, content):
+    """Return source entries the declared provider can load without semantic loss."""
     if provider["format"] == "text":
         payload = lines(content.decode())
     elif provider["format"] == "yaml":
@@ -214,19 +214,32 @@ def provider_payload(provider, content):
     else:
         raise AssertionError(("unsupported provider format", provider["format"]))
     assert payload and all(isinstance(item, str) and item.strip() for item in payload), provider
-    if provider["behavior"] == "ipcidr":
-        for item in payload:
-            try:
-                ipaddress.ip_network(item, strict=False)
-            except ValueError as exc:
-                raise AssertionError(("invalid ipcidr provider entry", item)) from exc
-    return payload
+    if provider["behavior"] != "ipcidr":
+        return payload
+
+    compatible, incompatible = [], []
+    for item in payload:
+        try:
+            ipaddress.ip_network(item, strict=False)
+            compatible.append(item)
+        except ValueError:
+            incompatible.append(item)
+
+    if name == "China-IP":
+        assert incompatible == ["132203"], ("unexpected China-IP non-CIDR entries", incompatible)
+        assert "IP-ASN,132203,DIRECT" in CONFIG["rules"], "China-IP ASN exception lost explicit routing"
+    else:
+        assert not incompatible, (name, "invalid ipcidr provider entries", incompatible)
+    return compatible
 
 
 def assert_no_rule_provider_warnings(text):
     suspicious = []
     for line in text.splitlines():
         lowered = line.casefold()
+        if "invalid ipcidr:[132203]" in lowered:
+            assert "IP-ASN,132203,DIRECT" in CONFIG["rules"]
+            continue
         if (
             ("warn" in lowered or "warning" in lowered)
             and ("rule" in lowered or "provider" in lowered)
@@ -245,7 +258,7 @@ def cache_rules(home):
         content = (ROOT / "List/UploadCN.list").read_bytes() if name == "UploadCN" else fetch(provider["url"])
         assert content, name
         path.write_bytes(content)
-        payload = provider_payload(provider, content)
+        payload = provider_payload(name, provider, content)
         expected_rule_counts[name] = len(payload)
         if name == "AI-Daily":
             surge_url = provider["url"].replace("/mihomo/", "/surge/").replace(".yaml", ".list")
