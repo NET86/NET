@@ -8,7 +8,7 @@ x-provider: &provider
   type: http
   interval: 86400
   proxy: DIRECT
-  exclude-filter: '(?i)(?:剩余流量|距离下次重置|套餐到期|导航页|机场公告|到期时间)(?:\s*[:：]|\s+\d|\s*$)|(?:^|[-_\s|丨·•])(?:到期|重置|获取|流量|官网)\s*[:：]|(?:^|[-_\s|丨·•])(?:官网|导航页|机场公告)\s*$|(?:^|[^a-z0-9])(?:traffic|expire|remaining|reset)(?:\s*[:：]\s*\d|\s+\d|\s*$)'
+  exclude-filter: '(?i)(?:^|[-_\s|丨·•])(?:(?:剩余流量|流量|(?:remaining\s+)?traffic|remaining)(?:\s*[:：]\s*|\s+)\d+(?:\.\d+)?\s*(?:[kmgtpe]i?b|b)(?:\s*/\s*\d+(?:\.\d+)?\s*(?:[kmgtpe]i?b|b))?|(?:套餐到期|到期时间|到期|expire(?:s|d)?(?:\s+(?:at|date))?)(?:\s*[:：]\s*|\s+)\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}日?(?:[ t]\d{1,2}:\d{2}(?::\d{2})?(?:z|[+-]\d{2}:?\d{2})?)?|(?:距离下次重置|重置|reset)(?:\s*[:：]\s*|\s+)\d+(?:\.\d+)?\s*(?:天|小时|分钟|days?|hours?|minutes?|[dhm])|(?:官网|导航页|机场公告)(?:\s*[:：]\s*https?://\S+)?)\s*$'
   health-check:
     enable: true
     url: https://www.gstatic.com/generate_204
