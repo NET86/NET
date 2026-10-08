@@ -1,6 +1,6 @@
 # Surge 原生验证状态与空组验收
 
-状态：未执行原生 Surge 验证。当前执行环境为 Windows；GitHub Actions 只做 Surge 静态检查，不能证明 smart 空组不会直连。模板保留 smart，未添加 REJECT 成员、未替换为 fallback、未修改客户端。
+状态：尚未取得原生 Surge Mac 的实际验收证据；GitHub Actions 只做 Surge 静态检查，不能证明 smart 空组不会直连。模板保留 smart，未添加 REJECT 成员、未替换为 fallback、未修改客户端。
 
 ## 官方约束与方案边界
 
