@@ -18,6 +18,11 @@ class ProviderCleanupTests(unittest.TestCase):
         self.assertEqual(checks.provider_payload('China-IP', self.provider, payload),
                          ['1.0.1.0/24', '2400:3200::/32'])
 
+    def test_no_cidr_data_is_rejected_even_with_known_asn(self):
+        for payload in (b'', b'# empty source\n', b'132203\n'):
+            with self.subTest(payload=payload), self.assertRaises(AssertionError):
+                checks.provider_payload('China-IP', self.provider, payload)
+
     def test_known_asn_compatibility_remains_explicit(self):
         self.assertEqual(checks.provider_payload('China-IP', self.provider, b'1.0.1.0/24\n132203\n'),
                          ['1.0.1.0/24'])

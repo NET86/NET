@@ -222,6 +222,7 @@ def provider_payload(name, provider, content):
         assert "IP-ASN,132203,DIRECT" in CONFIG["rules"], "China-IP ASN exception lost explicit routing"
     else:
         assert not incompatible, (name, "invalid ipcidr provider entries", incompatible)
+    assert compatible, (name, "ipcidr provider contains no CIDR entries")
     return compatible
 
 
