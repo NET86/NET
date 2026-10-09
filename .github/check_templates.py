@@ -249,24 +249,41 @@ def verify_dynamic_vendor_coverage(profile, vendor, label):
     assert not missing, (label, "vendor rules missing from profile", sorted(missing))
 
 
+def pin_ai_snapshot(url):
+    """Bind aggregate and vendor files to one release, not four moving URLs."""
+    prefix = "https://raw.githubusercontent.com/NET86/rules/"
+    if not url.startswith(prefix + "stable/"):
+        raise ValueError("AI provider must reference the reviewed stable source")
+    document = json.loads(fetch("https://api.github.com/repos/NET86/rules/git/ref/heads/stable"))
+    obj = document.get("object", {}) if isinstance(document, dict) else {}
+    revision = obj.get("sha") if isinstance(obj, dict) else None
+    if (not isinstance(document, dict) or document.get("ref") != "refs/heads/stable"
+            or not isinstance(obj, dict) or obj.get("type") != "commit"
+            or not isinstance(revision, str) or not re.fullmatch(r"[a-f0-9]{40}", revision)):
+        raise ValueError("Unable to resolve stable to an immutable commit")
+    print(f"AI rules immutable release snapshot: {revision}")
+    return prefix + revision + "/" + url[len(prefix + "stable/"):]
+
+
 def cache_rules(home):
     """Keep real provider formats/content; only substitute transport for CI."""
     expected_rule_counts = {}
     for name, provider in CONFIG["rule-providers"].items():
         path = home / provider["path"]
         path.parent.mkdir(parents=True, exist_ok=True)
-        content = (ROOT / "List/UploadCN.list").read_bytes() if name == "UploadCN" else fetch(provider["url"])
+        source_url = pin_ai_snapshot(provider["url"]) if name == "AI-Daily" else provider["url"]
+        content = (ROOT / "List/UploadCN.list").read_bytes() if name == "UploadCN" else fetch(source_url)
         assert content, name
         path.write_bytes(content)
         payload = provider_payload(name, provider, content)
         expected_rule_counts[name] = len(payload)
         if name == "AI-Daily":
-            surge_url = provider["url"].replace("/mihomo/", "/surge/").replace(".yaml", ".list")
+            surge_url = source_url.replace("/mihomo/", "/surge/").replace(".yaml", ".list")
             surge_payload = lines(fetch(surge_url).decode())
             assert payload and surge_payload, name
             # Verify membership against the current separately generated vendor
             # artifacts. No static domain inventory can go stale on valid updates.
-            mihomo_vendor_url = provider["url"].rsplit("/", 1)[0] + "/github-copilot.yaml"
+            mihomo_vendor_url = source_url.rsplit("/", 1)[0] + "/github-copilot.yaml"
             surge_vendor_url = surge_url.rsplit("/", 1)[0] + "/github-copilot.list"
             mihomo_vendor = provider_payload(
                 "github-copilot", {"format": "yaml", "behavior": "classical"},
