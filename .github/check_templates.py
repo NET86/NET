@@ -18,18 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = yaml.safe_load((ROOT / "Mihomo/NET_Mihomo.yaml").read_text(encoding="utf-8"))
 SURGE = (ROOT / "Surge/NET_Surge.conf").read_text(encoding="utf-8")
 REGIONS = {"hk": "香港", "tw": "台湾", "jp": "日本", "sg": "新加坡", "us": "美国", "kr": "韩国"}
-COPILOT_CORE_RULES = {
-    "DOMAIN,copilot.ai",
-    "DOMAIN-SUFFIX,copilot-stg.com",
-    "DOMAIN-SUFFIX,copilot.cloud.microsoft",
-    "DOMAIN-SUFFIX,copilot.com",
-    "DOMAIN-SUFFIX,copilot.microsoft.com",
-    "DOMAIN,copilot-proxy.githubusercontent.com",
-    "DOMAIN,copilot-workspace.githubnext.com",
-    "DOMAIN,copilotprodattachments.blob.core.windows.net",
-    "DOMAIN,origin-tracker.githubusercontent.com",
-    "DOMAIN-SUFFIX,githubcopilot.com",
-}
+# Use the actual independently published Copilot vendor list as the oracle.
+# A fixed inventory here would block valid automatic domain additions/removals.
 # Fixed expectations include both clients' original aliases, not generated from regexes.
 CASES = {
     "香港": ["HK-01", "hk-01", "香港", "🇭🇰", "Hong", "Hong Kong", "HongKong", "hong", "Hong-01", "HongKong-01"],
@@ -249,6 +239,13 @@ def assert_no_rule_provider_warnings(text):
     assert not suspicious, {"rule/provider parse warnings": suspicious}
 
 
+def verify_dynamic_vendor_coverage(profile, vendor, label):
+    """All currently published vendor rules must be in the corresponding profile."""
+    assert vendor, f"{label}: empty vendor list"
+    missing = set(vendor) - set(profile)
+    assert not missing, (label, "vendor rules missing from profile", sorted(missing))
+
+
 def cache_rules(home):
     """Keep real provider formats/content; only substitute transport for CI."""
     expected_rule_counts = {}
@@ -264,9 +261,17 @@ def cache_rules(home):
             surge_url = provider["url"].replace("/mihomo/", "/surge/").replace(".yaml", ".list")
             surge_payload = lines(fetch(surge_url).decode())
             assert payload and surge_payload, name
-            # Engine-specific syntax differs; Copilot's fixed domain rules are shared.
-            assert COPILOT_CORE_RULES <= set(payload), "Mihomo daily Copilot coverage"
-            assert COPILOT_CORE_RULES <= set(surge_payload), "Surge daily Copilot coverage"
+            # Verify membership against the current separately generated vendor
+            # artifacts. No static domain inventory can go stale on valid updates.
+            mihomo_vendor_url = provider["url"].rsplit("/", 1)[0] + "/github-copilot.yaml"
+            surge_vendor_url = surge_url.rsplit("/", 1)[0] + "/github-copilot.list"
+            mihomo_vendor = provider_payload(
+                "github-copilot", {"format": "yaml", "behavior": "classical"},
+                fetch(mihomo_vendor_url),
+            )
+            surge_vendor = lines(fetch(surge_vendor_url).decode())
+            verify_dynamic_vendor_coverage(payload, mihomo_vendor, "Mihomo Copilot")
+            verify_dynamic_vendor_coverage(surge_payload, surge_vendor, "Surge Copilot")
             for host in ["microsoft.com", "github.com", "raw.githubusercontent.com"]:
                 for rule in payload:
                     kind, value = rule.split(",", 1)

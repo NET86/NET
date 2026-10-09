@@ -19,7 +19,7 @@
 
 AI 规则使用 [NET86/rules 的 ai-daily](https://raw.githubusercontent.com/NET86/rules/stable/rules/mihomo/ai-daily.yaml)，其中已包含 Microsoft/GitHub Copilot；NET 模板不重复加载两份厂商包，上游独立包仍保留。Copilot 遥测保持显式走 AI。通用规则使用 [blackmatrix7/ios_rule_script](https://github.com/blackmatrix7/ios_rule_script) 的官方 Clash 适配格式。两端分类、顺序、策略和格式映射见[公共分流说明](../RULES.md)。规则源及节点服务的可用性由上游提供方决定。
 
-升级模板后，请手动刷新 ai-daily 规则资源并重新加载配置，确认客户端缓存包含新增 Copilot 域名。
+CI 使用稳定分支最新的 Copilot 单厂商规则核对 ai-daily，而非固定历史域名清单，正常增删不需要人工改测试。升级模板后仍应刷新 ai-daily 并重新加载配置。
 
 ## DNS 与 AnyTLS
 
