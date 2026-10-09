@@ -27,5 +27,7 @@ jobs:
           echo "8451100836c9eda194331c2babfad490b2faf30cebc1a04b0e76fd8ac2d35d10  $RUNNER_TEMP/mihomo.gz" | sha256sum --check
           gzip -dc "$RUNNER_TEMP/mihomo.gz" > "$RUNNER_TEMP/mihomo"
           chmod +x "$RUNNER_TEMP/mihomo"
+      - name: Test dynamic vendor rule inclusion
+        run: python -m unittest discover -s tests -v
       - name: Check real templates and synthetic provider scenarios
         run: python .github/check_templates.py "$RUNNER_TEMP/mihomo"
