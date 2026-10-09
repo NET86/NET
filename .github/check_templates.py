@@ -216,10 +216,13 @@ def provider_payload(name, provider, content):
             incompatible.append(item)
 
     if name == "China-IP":
-        assert incompatible == ["132203"], ("unexpected China-IP non-CIDR entries", incompatible)
+        # The reviewed exception may disappear when upstream fixes its payload.
+        # Reject new malformed entries without requiring the old defect to remain.
+        assert incompatible in ([], ["132203"]), ("unexpected China-IP non-CIDR entries", incompatible)
         assert "IP-ASN,132203,DIRECT" in CONFIG["rules"], "China-IP ASN exception lost explicit routing"
     else:
         assert not incompatible, (name, "invalid ipcidr provider entries", incompatible)
+    assert compatible, (name, "ipcidr provider contains no CIDR entries")
     return compatible
 
 
