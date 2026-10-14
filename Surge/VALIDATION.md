@@ -2,6 +2,8 @@
 
 状态：尚未取得原生 Surge Mac 的实际验收证据；GitHub Actions 只做 Surge 静态检查，不能证明 smart 空组不会直连。模板保留 smart，未添加 REJECT 成员、未替换为 fallback、未修改客户端。
 
+名称过滤仅排除完整流量值、到期日期、重置时长、官方入口 URL 和明确的状态文本；`Traffic: 100 GB Tokyo` 等带节点描述的名称保留。静态回归同时覆盖“其他”“全部节点”和两个机场前缀；这不替代原生 Surge 正则及空组行为验收。
+
 ## 官方约束与方案边界
 
 - [Smart Group 官方说明](https://manual.nssurge.com/policy-groups/smart.html)：smart 接收代理成员，忽略内置策略与嵌套组。因此简单加入 REJECT 或把 REJECT 放进被复制的组，不能作为受支持的空组保护。

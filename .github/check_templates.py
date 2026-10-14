@@ -30,7 +30,12 @@ CASES = {
     "韩国": ["KR-01", "kr-01", "韩国", "韓國", "🇰🇷", "Korea"],
     "其他地区": ["AUS-Sydney", "aus-sydney", "RUS-01", "DE-01", "CUS-01", "US01", "XHK-01", "XJP-01", "XSG-01", "XTW-01", "XKR-01", "Thailand", "Thai-Bangkok", "Chongqing", "chongqing-01", "XHong", "HongX", "XHongKong", "HongKongX", "XTai", "TaiX", "XTaiwan", "TaiwanX", "XTaipei", "TaipeiX", "GB-01", "GB-London-01", "London-GB-02"],
 }
-SURGE_OTHER_NAMES = ["Traffic-Node-01", "Expire-Node-01", "官网线路-01", "套餐专线-01", "更新线路-01"]
+SURGE_OTHER_NAMES = [
+    "Traffic-Node-01", "Expire-Node-01", "官网线路-01", "套餐专线-01", "更新线路-01",
+    "Traffic: 100 GB Tokyo", "Remaining Traffic: 10 GiB / 100 GiB London",
+    "Expire: 2026-12-31 Tokyo", "Reset: 3 days London", "剩余流量：10 Gbps专线",
+    "官网: 官网线路", "套餐: 示例专线", "更新: 请更新订阅专线",
+]
 MIHOMO_PROVIDER_VALID_NAMES = [
     "Traffic-Node-01", "Expire-Node-01", "Remaining-Pool-HK", "Reset-US-01",
     "官网线路-01", "机场官网线路", "MyTraffic: Fast", "100 GB",
@@ -51,6 +56,7 @@ STATUS_NAMES = [
     "到期时间: 2026-12-31", "Remaining Traffic: 100 GB", "Traffic: 100 GB",
     "Expire: 2026-12-31", "Reset: 3 days", "100 GB", "12.5GB",
     "导航: https://example.com", "官网: https://example.com", "更新: 请更新订阅", "套餐: 示例",
+    "Traffic: 10 GiB / 100 GiB", "Expire: 2026-12-31 23:59:00Z",
 ]
 
 
